@@ -1,0 +1,19 @@
+{
+  "name": "Varlık — Neural Core",
+  "short_name": "Varlık",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#000000",
+  "theme_color": "#000814",
+  "description": "Yapay zeka görsel motoru",
+  "icons": [
+    {
+      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgZmlsbD0iIzAwMDgxNCIvPjxjaXJjbGUgY3g9IjI1NiIgY3k9IjI1NiIgcj0iNjAiIGZpbGw9IiM0ZGQ4ZmYiLz48Y2lyY2xlIGN4PSIyNTYiIGN5PSIyNTYiIHI9IjQwIiBmaWxsPSIjZmZmIi8+PGcgc3Ryb2tlPSIjMDBhY2ZmIiBmaWxsPSJub25lIiBzdHJva2Utd2lkdGg9IjIiIG9wYWNpdHk9IjAuNiI+PGNpcmNsZSBjeD0iMjU2IiBjeT0iMjU2IiByPSIxMTAiLz48Y2lyY2xlIGN4PSIyNTYiIGN5PSIyNTYiIHI9IjE2MCIvPjxjaXJjbGUgY3g9IjI1NiIgY3k9IjI1NiIgcj0iMjAwIi8+PC9nPjwvc3ZnPg==",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

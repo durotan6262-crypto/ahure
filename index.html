@@ -6,35 +6,48 @@
 <meta name="theme-color" content="#000814">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Varlık">
 <link rel="manifest" href="manifest.json">
 <title>Varlık</title>
 <style>
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000;
-  -webkit-tap-highlight-color:transparent;user-select:none;touch-action:none}
+  -webkit-tap-highlight-color:transparent;user-select:none}
 canvas{position:fixed;inset:0;width:100%;height:100%;display:block;background:#000}
-#modes{position:fixed;top:14px;right:14px;z-index:10;display:flex;gap:6px;flex-wrap:wrap;
-  justify-content:flex-end;max-width:70vw}
-#modes button{width:44px;height:44px;padding:0;font-size:18px;border-radius:50%;
-  background:rgba(0,20,40,.4);border:1px solid rgba(80,200,255,.3);
+#modes{position:fixed;top:14px;right:14px;z-index:100;display:flex;gap:6px}
+#modes button{width:44px;height:44px;padding:4px;font-size:18px;border-radius:50%;
+  background:rgba(0,20,40,.5);border:1px solid rgba(80,200,255,.35);
   color:#fff;cursor:pointer;backdrop-filter:blur(8px);transition:all .3s;
-  display:flex;align-items:center;justify-content:center;
-  -webkit-tap-highlight-color:transparent}
-#modes button:active{transform:scale(.9)}
-#modes button.on{background:rgba(80,200,255,.3);border-color:rgba(120,220,255,.9);
-  box-shadow:0 0 20px rgba(80,200,255,.6)}
+  display:flex;align-items:center;justify-content:center}
+#modes button.on{background:rgba(80,200,255,.4);border-color:#7ce;
+  box-shadow:0 0 20px rgba(80,200,255,.7)}
+#err{position:fixed;bottom:6px;left:6px;color:#f66;font-size:11px;z-index:999;
+  max-width:90vw;word-break:break-all;display:none;
+  background:rgba(0,0,0,.7);padding:4px 8px;border-radius:6px}
+  .world-icon {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  border-radius: 50%;
+  animation: spin 6s linear infinite;
+  filter: drop-shadow(0 0 6px rgba(80, 200, 255, 0.6));
+  pointer-events: none;
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
 <div id="modes">
-  <button data-mode="idle" class="on" title="Sakin">◉</button>
-  <button data-mode="work" title="Çalışma">🌈</button>
-  <button data-mode="danger" title="Tehlike">⚠</button>
-  <button data-mode="emergency" title="Acil">⚡</button>
-  <button data-mode="protection" title="Koruma">🛡</button>
+  <button data-mode="idle" class="on">◉</button>
+  <button data-mode="work"><img src="world.png" class="world-icon" alt="Çalışma"></button>
+  <button data-mode="danger">⚠</button>
+  <button data-mode="emergency">⚡</button>
+  <button data-mode="protection">🛡</button>
 </div>
+<div id="err"></div>
 
 <script>
 if('serviceWorker' in navigator){
@@ -50,135 +63,54 @@ if('serviceWorker' in navigator){
   const ctx = c.getContext("2d", {alpha:false});
   const glow = document.createElement("canvas");
   const gx = glow.getContext("2d");
-  let W=0, H=0, D=1, cx=0, cy=0, t=0, last=0;
+  const errEl = document.getElementById("err");
+  let W=0, H=0, D=1, cx=0, cy=0, t=0, last=performance.now();
   let P=[], stars=[], trails=[], warpStars=[];
   const TAU = Math.PI*2;
 
   const introStart = performance.now();
   const INTRO_DURATION = 6000;
 
-  // ═══════════════════════════════════════════════════════
-  //  MOD SİSTEMİ
-  // ═══════════════════════════════════════════════════════
+  // Mod tanımları
   const MODES = {
-    idle:       { hueCycle:false, hue:200, hueSpeed:0,  pulseSpeed:2.15, breatheSpeed:0.72, starSpeed:0,   vibrate:0,  name:"SAKİN" },
-    work:       { hueCycle:true,  hue:200, hueSpeed:55, pulseSpeed:2.6,  breatheSpeed:1.05, starSpeed:14,  vibrate:0,  name:"ÇALIŞMA" },
-    danger:     { hueCycle:false, hue:0,   hueSpeed:0,  pulseSpeed:6.5,  breatheSpeed:2.4,  starSpeed:1.5, vibrate:0,  name:"TEHLİKE" },
-    emergency:  { hueCycle:false, hue:48,  hueSpeed:0,  pulseSpeed:4.5,  breatheSpeed:3.0,  starSpeed:0.8, vibrate:3,  name:"ACİL" },
-    protection: { hueCycle:false, hue:280, hueSpeed:0,  pulseSpeed:1.8,  breatheSpeed:0.6,  starSpeed:2,   vibrate:0,  name:"KORUMA" },
+    idle:       { hueCycle:0, hue:200, hueSpeed:0,  pulse:2.15, breathe:0.72, star:0,  vib:0 },
+    work:       { hueCycle:1, hue:200, hueSpeed:55, pulse:2.6,  breathe:1.05, star:14, vib:0 },
+    danger:     { hueCycle:0, hue:0,   hueSpeed:0,  pulse:6.5,  breathe:2.4,  star:1.5,vib:0 },
+    emergency:  { hueCycle:0, hue:48,  hueSpeed:0,  pulse:4.5,  breathe:3.0,  star:0.8,vib:3 },
+    protection: { hueCycle:0, hue:280, hueSpeed:0,  pulse:1.8,  breathe:0.6,  star:2,  vib:0 },
   };
 
-  let currentModeKey = 'idle';
-  const modeState = {
-    pulseSpeed: 2.15,
-    breatheSpeed: 0.72,
-    starSpeed: 0,
-    vibrate: 0,
-    hue: 200,
-  };
+  const A = { hue:200, pulse:2.15, breathe:0.72, star:0, vib:0 };
 
-  // ═══════════════════════════════════════════════════════
-  //  AUDIO
-  // ═══════════════════════════════════════════════════════
-  let AC=null, masterGain=null, atmosStarted=false;
-
-  function initAudio(){
-    try{
-      AC = new (window.AudioContext || window.webkitAudioContext)();
-      masterGain = AC.createGain();
-      masterGain.gain.value = 0.0;
-      masterGain.connect(AC.destination);
-      return true;
-    }catch(e){return false;}
+  // Audio
+  let AC=null, mg=null, atmoStarted=false;
+  function initA(){ try{ AC=new (window.AudioContext||window.webkitAudioContext)();
+    mg=AC.createGain(); mg.gain.value=0; mg.connect(AC.destination); return true; }catch(e){ return false; } }
+  function atmo(){
+    if(!AC||atmoStarted) return; atmoStarted=true;
+    const now=AC.currentTime, dur=60;
+    const nb=AC.createBuffer(1,AC.sampleRate*dur,AC.sampleRate); const nd=nb.getChannelData(0); let l=0;
+    for(let i=0;i<nd.length;i++){ const w=Math.random()*2-1; l=(l+0.02*w)/1.02; nd[i]=l*5; }
+    const ns=AC.createBufferSource(); ns.buffer=nb; ns.loop=true;
+    const lp=AC.createBiquadFilter(); lp.type="lowpass"; lp.frequency.value=220;
+    const bs=AC.createBiquadFilter(); bs.type="lowshelf"; bs.frequency.value=80; bs.gain.value=12;
+    const sg=AC.createGain(); sg.gain.value=0.30;
+    const sub=AC.createOscillator(); sub.type="sine"; sub.frequency.value=40;
+    const subG=AC.createGain(); subG.gain.value=0.08;
+    ns.connect(lp).connect(bs).connect(sg).connect(mg);
+    sub.connect(subG).connect(mg);
+    ns.start(now); sub.start(now);
+    mg.gain.setValueAtTime(0,now);
+    mg.gain.linearRampToValueAtTime(0.30,now+0.15);
+    mg.gain.linearRampToValueAtTime(0.0,now+6);
   }
+  function tryA(){ if(atmoStarted) return; if(!AC){ if(!initA()) return; }
+    if(AC.state==="suspended") AC.resume().then(atmo).catch(()=>{}); else atmo(); }
+  tryA(); setTimeout(tryA,100); setTimeout(tryA,500);
+  const kick=()=>{ tryA(); };
+  document.addEventListener("click",kick);
+  document.addEventListener("touchstart",kick);
 
-  function playAtmosphere(){
-    if(!AC || atmosStarted) return;
-    atmosStarted = true;
-    const now = AC.currentTime;
-    const dur = 60;
-
-    const nBuf = AC.createBuffer(1, AC.sampleRate * dur, AC.sampleRate);
-    const nData = nBuf.getChannelData(0);
-    let nLast = 0;
-    for(let i = 0; i < nData.length; i++){
-      const white = Math.random() * 2 - 1;
-      nLast = (nLast + 0.02 * white) / 1.02;
-      nData[i] = nLast * 5;
-    }
-    const noiseSrc = AC.createBufferSource();
-    noiseSrc.buffer = nBuf;
-    noiseSrc.loop = true;
-
-    const lp = AC.createBiquadFilter();
-    lp.type = "lowpass";
-    lp.frequency.value = 220;
-    lp.Q.value = 0.8;
-
-    const bass = AC.createBiquadFilter();
-    bass.type = "lowshelf";
-    bass.frequency.value = 80;
-    bass.gain.value = 12;
-
-    const sub = AC.createOscillator();
-    sub.type = "sine";
-    sub.frequency.value = 40;
-    const subGain = AC.createGain();
-    subGain.gain.value = 0.08;
-
-    const lfo = AC.createOscillator();
-    lfo.type = "sine";
-    lfo.frequency.value = 0.15;
-    const lfoGain = AC.createGain();
-    lfoGain.gain.value = 0.05;
-    lfo.connect(lfoGain);
-    lfoGain.connect(masterGain.gain);
-
-    const noiseGain = AC.createGain();
-    noiseGain.gain.value = 0.30;
-
-    noiseSrc.connect(lp).connect(bass).connect(noiseGain).connect(masterGain);
-    sub.connect(subGain).connect(masterGain);
-
-    noiseSrc.start(now);
-    sub.start(now);
-    lfo.start(now);
-
-    masterGain.gain.cancelScheduledValues(now);
-    masterGain.gain.setValueAtTime(0, now);
-    masterGain.gain.linearRampToValueAtTime(0.30, now + 0.15);
-    masterGain.gain.linearRampToValueAtTime(0.0, now + 6.0);
-  }
-
-  function tryStartAudio(){
-    if(atmosStarted) return;
-    if(!AC){ if(!initAudio()) return; }
-    if(AC.state === "suspended"){
-      AC.resume().then(()=>{ playAtmosphere(); }).catch(()=>{});
-    } else {
-      playAtmosphere();
-    }
-  }
-
-  tryStartAudio();
-  setTimeout(tryStartAudio, 100);
-  setTimeout(tryStartAudio, 500);
-
-  const kick = () => {
-    tryStartAudio();
-    if(atmosStarted){
-      document.removeEventListener("click", kick);
-      document.removeEventListener("touchstart", kick);
-      document.removeEventListener("keydown", kick);
-    }
-  };
-  document.addEventListener("click", kick);
-  document.addEventListener("touchstart", kick);
-  document.addEventListener("keydown", kick);
-
-  // ═══════════════════════════════════════════════════════
-  //  RESIZE & BUILD
-  // ═══════════════════════════════════════════════════════
   function resize(){
     W=innerWidth; H=innerHeight; D=Math.min(devicePixelRatio||1,2);
     c.width=W*D; c.height=H*D; glow.width=W*D; glow.height=H*D;
@@ -224,292 +156,281 @@ if('serviceWorker' in navigator){
       trails.push({a,r:scale*(.62+Math.random()*.52),len:scale*(.18+Math.random()*.42),
         wob:Math.random()*TAU,speed:.25+Math.random()*.5,alpha:.04+Math.random()*.12});
     }
-    // Warp yıldızları — sadece çalışma modunda görünür
     for(let i=0;i<250;i++){
       warpStars.push({
-        x: (Math.random()-0.5)*2,
-        y: (Math.random()-0.5)*2,
-        z: 100 + Math.random()*700,
-        a: 0.4 + Math.random()*0.6,
-        s: 0.6 + Math.random()*1.4,
+        x:(Math.random()-0.5)*2,
+        y:(Math.random()-0.5)*2,
+        z:100+Math.random()*700,
+        a:0.5+Math.random()*0.5,
+        s:0.6+Math.random()*1.5,
       });
     }
   }
 
   function proj(p){const f=720/(720+p.z);return{x:cx+p.x*f,y:cy+p.y*f,s:f};}
   function radial(X,Y,R,stops){
+    if(!isFinite(R) || R <= 0) return;
     const g=gx.createRadialGradient(X,Y,0,X,Y,R);
     for(const s of stops)g.addColorStop(s[0],s[1]);
-    gx.fillStyle=g;gx.beginPath();gx.arc(X,Y,R,0,TAU);gx.fill();
+    gx.fillStyle=g; gx.beginPath(); gx.arc(X,Y,R,0,TAU); gx.fill();
   }
 
-  // ═══════════════════════════════════════════════════════
-  //  MOD BUTONLARI
-  // ═══════════════════════════════════════════════════════
+  let currentMode = "idle";
   const modeButtons = document.querySelectorAll("#modes button");
-  function setMode(key){
-    if(!MODES[key]) return;
-    currentModeKey = key;
-    modeButtons.forEach(b => b.classList.toggle("on", b.dataset.mode === key));
+  function setMode(name){
+    if(!MODES[name]) return;
+    currentMode = name;
+    modeButtons.forEach(b => b.classList.toggle("on", b.dataset.mode === name));
   }
   modeButtons.forEach(b => {
-    b.addEventListener("click", () => setMode(b.dataset.mode));
-    b.addEventListener("touchstart", (e) => {
-      e.preventDefault();
-      setMode(b.dataset.mode);
-    }, {passive:false});
+    const handler = (e) => { e.preventDefault(); setMode(b.dataset.mode); };
+    b.addEventListener("click", handler);
+    b.addEventListener("touchstart", handler, {passive:false});
   });
 
-  // ═══════════════════════════════════════════════════════
-  //  FRAME LOOP
-  // ═══════════════════════════════════════════════════════
   function frame(now){
-    const dt = Math.min((now-last)/16.67||1, 2);
-    last = now;
-    t += .012*dt;
+    try {
+      const dt = Math.min((now-last)/16.67||1, 2);
+      last = now;
+      t += .012 * dt;
 
-    // Mod state lerp
-    const target = MODES[currentModeKey];
-    modeState.pulseSpeed   += (target.pulseSpeed   - modeState.pulseSpeed)   * 0.05;
-    modeState.breatheSpeed += (target.breatheSpeed - modeState.breatheSpeed) * 0.05;
-    modeState.starSpeed    += (target.starSpeed    - modeState.starSpeed)    * 0.05;
-    modeState.vibrate      += (target.vibrate      - modeState.vibrate)      * 0.05;
+      const target = MODES[currentMode] || MODES.idle;
+      A.pulse   += (target.pulse   - A.pulse)   * 0.05;
+      A.breathe += (target.breathe - A.breathe) * 0.05;
+      A.star    += (target.star    - A.star)    * 0.05;
+      A.vib     += (target.vib     - A.vib)     * 0.05;
 
-    // Hue — renk geçişi veya gökkuşağı
-    if(target.hueCycle){
-      modeState.hue = (modeState.hue + target.hueSpeed * dt * 0.016 + 360) % 360;
-    } else {
-      let hd = target.hue - modeState.hue;
-      while(hd > 180) hd -= 360;
-      while(hd < -180) hd += 360;
-      modeState.hue = (modeState.hue + hd * 0.06 + 360) % 360;
-    }
-    const hue = modeState.hue;
+      if(target.hueCycle){
+        A.hue = (A.hue + target.hueSpeed * dt * 0.016 + 360) % 360;
+      } else {
+        let hd = target.hue - A.hue;
+        while(hd > 180) hd -= 360;
+        while(hd < -180) hd += 360;
+        A.hue = (A.hue + hd * 0.06 + 360) % 360;
+      }
+      const hue = A.hue;
 
-    // Vibration offset
-    const vibX = Math.sin(t*32) * modeState.vibrate;
-    const vibY = Math.cos(t*29) * modeState.vibrate;
-    const cxc = cx + vibX;
-    const cyc = cy + vibY;
+      const vibX = Math.sin(t*32) * A.vib;
+      const vibY = Math.cos(t*29) * A.vib;
+      const cxc = cx + vibX;
+      const cyc = cy + vibY;
 
-    // Intro progress
-    const elapsed = now - introStart;
-    const raw = Math.min(1, elapsed/INTRO_DURATION);
-    const intro = raw < 0.5
-      ? 4*raw*raw*raw
-      : 1 - Math.pow(-2*raw+2,3)/2;
-    const scaleFactor = intro;
-    const visibility = intro;
+      const elapsed = now - introStart;
+      const raw = Math.min(1, elapsed/INTRO_DURATION);
+      const intro = raw < 0.5 ? 4*raw*raw*raw : 1 - Math.pow(-2*raw+2,3)/2;
+      const visibility = intro;
+      const scaleFactor = intro;
 
-    // ═══ ARKA PLAN ═══
-    ctx.globalCompositeOperation="source-over";
-    ctx.fillStyle="rgba(0,0,3,.30)";
-    ctx.fillRect(0,0,W,H);
+      ctx.globalCompositeOperation="source-over";
+      ctx.fillStyle="rgba(0,0,3,.30)";
+      ctx.fillRect(0,0,W,H);
 
-    const bg=ctx.createRadialGradient(cxc,cyc,0,cxc,cyc,Math.min(W,H)*.62);
-    bg.addColorStop(0,`hsla(${hue},80%,8%,${.20*visibility})`);
-    bg.addColorStop(.45,`hsla(${hue},70%,4%,${.10*visibility})`);
-    bg.addColorStop(1,"rgba(0,0,0,0)");
-    ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+      const bg=ctx.createRadialGradient(cxc,cyc,0,cxc,cyc,Math.min(W,H)*.62);
+      bg.addColorStop(0,`hsla(${hue},80%,8%,${.20*visibility})`);
+      bg.addColorStop(.45,`hsla(${hue},70%,4%,${.10*visibility})`);
+      bg.addColorStop(1,"rgba(0,0,0,0)");
+      ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
 
-    const scale = Math.min(W,H)*.235*scaleFactor;
-    const breathe = 1 + Math.sin(t * modeState.breatheSpeed) * .018 * scaleFactor;
-    const spin = t * .045;
+      const scale = Math.min(W,H)*.235*scaleFactor;
+      const breathe = 1 + Math.sin(t * A.breathe) * .018 * scaleFactor;
+      const spin = t * .045;
 
-    // Cloud particle update
-    for(const p of P){
-      const ang = p.phase + t*p.speed*.17;
-      const nx=Math.sin(ang+p.y*.008)*2.2*scaleFactor;
-      const ny=Math.cos(ang+p.x*.007)*1.7*scaleFactor;
-      const nz=Math.sin(ang+p.z*.006)*1.4*scaleFactor;
-      const tgt=p.edge<.15?.75:1;
-      p.x += ((p.ox*scaleFactor*breathe*tgt+nx)-p.x)*.010*dt;
-      p.y += ((p.oy*scaleFactor*breathe*tgt+ny)-p.y)*.010*dt;
-      p.z += ((p.oz*scaleFactor+nz)-p.z)*.009*dt;
-    }
+      for(const p of P){
+        const ang = p.phase + t*p.speed*.17;
+        const nx=Math.sin(ang+p.y*.008)*2.2*scaleFactor;
+        const ny=Math.cos(ang+p.x*.007)*1.7*scaleFactor;
+        const nz=Math.sin(ang+p.z*.006)*1.4*scaleFactor;
+        const tgt=p.edge<.15?.75:1;
+        p.x += ((p.ox*scaleFactor*breathe*tgt+nx)-p.x)*.010*dt;
+        p.y += ((p.oy*scaleFactor*breathe*tgt+ny)-p.y)*.010*dt;
+        p.z += ((p.oz*scaleFactor+nz)-p.z)*.009*dt;
+      }
 
-    const pts=[];
-    const ca=Math.cos(spin), sa=Math.sin(spin);
-    for(const p of P){
-      const rx=p.x*ca-p.z*sa, rz=p.x*sa+p.z*ca;
-      const pp={x:rx,y:p.y,z:rz};
-      const q=proj(pp); pts.push({p:pp,q});
-    }
-    pts.sort((a,b)=>b.p.z-a.p.z);
+      const pts=[];
+      const ca=Math.cos(spin), sa=Math.sin(spin);
+      for(const p of P){
+        const rx=p.x*ca-p.z*sa, rz=p.x*sa+p.z*ca;
+        const pp={x:rx,y:p.y,z:rz};
+        const q=proj(pp); pts.push({p:pp,q});
+      }
+      pts.sort((a,b)=>b.p.z-a.p.z);
 
-    gx.globalCompositeOperation="source-over";
-    gx.clearRect(0,0,W,H);
+      gx.globalCompositeOperation="source-over";
+      gx.clearRect(0,0,W,H);
 
-    // ═══ ATMOSFER ═══
-    radial(cxc,cyc,scale*1.12,[
-      [0,`hsla(${hue},90%,45%,${.20*visibility})`],
-      [.24,`hsla(${hue},85%,40%,${.11*visibility})`],
-      [.62,`hsla(${hue},80%,25%,${.04*visibility})`],
-      [1,"rgba(0,0,0,0)"]
-    ]);
+      radial(cxc,cyc,scale*1.12,[
+        [0,`hsla(${hue},90%,45%,${.20*visibility})`],
+        [.24,`hsla(${hue},85%,40%,${.11*visibility})`],
+        [.62,`hsla(${hue},80%,25%,${.04*visibility})`],
+        [1,"rgba(0,0,0,0)"]
+      ]);
 
-    gx.globalCompositeOperation="lighter";
+      gx.globalCompositeOperation="lighter";
 
-    // ═══ WARP YILDIZLARI (sadece çalışma modunda) ═══
-    const warpAlpha = Math.min(1, modeState.starSpeed / 8);
-    if(warpAlpha > 0.02){
-      for(const ws of warpStars){
-        // Z azalt → yıldız yaklaşıyor
-        const prevZ = ws.z;
-        ws.z -= modeState.starSpeed * dt * 0.6;
-        if(ws.z < -500){
-          ws.z = 800;
-          ws.x = (Math.random()-0.5)*2;
-          ws.y = (Math.random()-0.5)*2;
-        }
-        const f = 720/(720 + ws.z);
-        const pf = 720/(720 + prevZ);
-        if(f <= 0) continue;
-
+      // ═══════════════════════════════════════════════════
+      //  WARP YILDIZLARI — kuyruk YOK, sadece nokta + twinkle
+      //  Yıldızlar DIŞA doğru akar (üzerine gelir)
+      // ═══════════════════════════════════════════════════
+      const warpAlpha = Math.min(1, A.star / 8);
+      if(warpAlpha > 0.02){
         const spread = Math.min(W,H) * 0.9;
-        const x = cxc + ws.x * f * spread;
-        const y = cyc + ws.y * f * spread;
-        const px = cxc + ws.x * pf * spread;
-        const py = cyc + ws.y * pf * spread;
+        for(const ws of warpStars){
+          // Z artıyor → yıldız yaklaşıyor (dışa akış)
+          ws.z += A.star * dt * 0.6;
+          if(ws.z > 800){
+            ws.z = -500;
+            ws.x = (Math.random()-0.5)*2;
+            ws.y = (Math.random()-0.5)*2;
+          }
+          const f = 720/(720 + ws.z);
+          if(f <= 0.01) continue;
 
-        const size = ws.s * f * DPR * 1.4;
-        const alpha = ws.a * warpAlpha * Math.min(1, f * 1.2);
+          const x = cxc + ws.x * f * spread;
+          const y = cyc + ws.y * f * spread;
+          const size = ws.s * f * D * 1.2;
+          const baseAlpha = ws.a * warpAlpha * Math.min(1, f * 1.2);
 
-        // Kuyruk (yıldızın geçmiş konumundan şimdiki konumuna)
-        gx.strokeStyle = `hsla(${(hue+ws.x*20+360)%360}, 85%, 75%, ${alpha*0.5})`;
-        gx.lineWidth = size * 0.5;
-        gx.lineCap = "round";
-        gx.beginPath();
-        gx.moveTo(px, py);
-        gx.lineTo(x, y);
-        gx.stroke();
+          // Twinkle — parıldama
+          const twinkle = 0.55 + 0.45 * Math.sin(t * 3.5 + ws.x * 12 + ws.y * 8);
 
-        // Yıldız başı
-        gx.fillStyle = `hsla(${hue}, 40%, 95%, ${alpha})`;
-        gx.beginPath();
-        gx.arc(x, y, Math.max(0.3, size), 0, TAU);
-        gx.fill();
-      }
-    }
+          const pHue = (hue + ws.x * 30 + 360) % 360;
+          const starAlpha = baseAlpha * twinkle;
 
-    // ═══ FİLAMENTLER ═══
-    gx.lineCap="round";
-    for(const f of trails){
-      const a = f.a + t*f.speed*.11;
-      const x0=cxc+Math.cos(a)*f.r*scaleFactor;
-      const y0=cyc+Math.sin(a)*f.r*.62*scaleFactor;
-      const x1=cxc+Math.cos(a+.25+Math.sin(f.wob+t)*.12)*(f.r+f.len)*scaleFactor;
-      const y1=cyc+Math.sin(a+.25+Math.sin(f.wob+t)*.12)*(f.r+f.len)*.62*scaleFactor;
-      const xm=(x0+x1)/2+Math.sin(t+f.wob)*18*scaleFactor;
-      const ym=(y0+y1)/2+Math.cos(t*.8+f.wob)*15*scaleFactor;
-      gx.strokeStyle=`hsla(${hue}, 95%, 55%, ${f.alpha*visibility})`;
-      gx.lineWidth=.8*scaleFactor;
-      gx.beginPath(); gx.moveTo(x0,y0); gx.quadraticCurveTo(xm,ym,x1,y1); gx.stroke();
-    }
+          // Dış halo
+          gx.fillStyle = `hsla(${pHue}, 90%, 75%, ${starAlpha * 0.25})`;
+          gx.beginPath();
+          gx.arc(x, y, Math.max(1, size * 2.4), 0, TAU);
+          gx.fill();
 
-    // ═══ BAĞLANTILAR ═══
-    gx.lineWidth=.65*Math.max(0.1,scaleFactor);
-    for(let i=0;i<pts.length;i++){
-      const A=pts[i];
-      for(let j=i+1;j<Math.min(pts.length,i+28);j++){
-        const B=pts[j];
-        const dx=A.p.x-B.p.x,dy=A.p.y-B.p.y,dz=A.p.z-B.p.z;
-        const d=Math.sqrt(dx*dx+dy*dy+dz*dz);
-        const maxD=scale*.29;
-        if(d<maxD){
-          const a=(1-d/maxD)*.08*visibility;
-          const depth=.35+.65*A.q.s;
-          gx.strokeStyle=`hsla(${hue}, 90%, 60%, ${a*depth})`;
-          gx.beginPath(); gx.moveTo(A.q.x,A.q.y); gx.lineTo(B.q.x,B.q.y); gx.stroke();
+          // Ana nokta
+          gx.fillStyle = `hsla(${pHue}, 60%, 92%, ${starAlpha})`;
+          gx.beginPath();
+          gx.arc(x, y, Math.max(0.5, size), 0, TAU);
+          gx.fill();
         }
       }
-    }
 
-    // ═══ PARÇACIKLAR ═══
-    for(const o of pts){
-      const p=o.p,q=o.q;
-      const pulse=.7+.3*Math.sin(t*1.8+p.pulse);
-      const a=p.alpha*(.45+.55*q.s)*pulse*visibility;
-      const r=Math.max(.45,p.size*q.s);
-      gx.fillStyle=`hsla(${hue}, 90%, 55%, ${a*.34})`;
-      gx.beginPath(); gx.arc(q.x,q.y,r*4.2,0,TAU); gx.fill();
-      gx.fillStyle=`hsla(${hue}, 80%, 70%, ${a*.82})`;
-      gx.beginPath(); gx.arc(q.x,q.y,r,0,TAU); gx.fill();
-    }
+      // Filamentler
+      gx.lineCap="round";
+      for(const f of trails){
+        const a = f.a + t*f.speed*.11;
+        const x0=cxc+Math.cos(a)*f.r*scaleFactor;
+        const y0=cyc+Math.sin(a)*f.r*.62*scaleFactor;
+        const x1=cxc+Math.cos(a+.25+Math.sin(f.wob+t)*.12)*(f.r+f.len)*scaleFactor;
+        const y1=cyc+Math.sin(a+.25+Math.sin(f.wob+t)*.12)*(f.r+f.len)*.62*scaleFactor;
+        const xm=(x0+x1)/2+Math.sin(t+f.wob)*18*scaleFactor;
+        const ym=(y0+y1)/2+Math.cos(t*.8+f.wob)*15*scaleFactor;
+        gx.strokeStyle=`hsla(${hue}, 95%, 55%, ${f.alpha*visibility})`;
+        gx.lineWidth=.8*scaleFactor;
+        gx.beginPath(); gx.moveTo(x0,y0); gx.quadraticCurveTo(xm,ym,x1,y1); gx.stroke();
+      }
 
-    // ═══ SABİT YILDIZ TOZU ═══
-    for(const s of stars){
-      const q=proj({x:s.x*scaleFactor,y:s.y*scaleFactor,z:s.z*scaleFactor});
-      gx.fillStyle=`hsla(${hue}, 85%, 65%, ${s.a*visibility})`;
-      gx.fillRect(q.x,q.y,s.s,s.s);
-    }
+      // Bağlantılar
+      gx.lineWidth=.65*Math.max(0.1,scaleFactor);
+      for(let i=0;i<pts.length;i++){
+        const A_=pts[i];
+        for(let j=i+1;j<Math.min(pts.length,i+28);j++){
+          const B_=pts[j];
+          const dx=A_.p.x-B_.p.x,dy=A_.p.y-B_.p.y,dz=A_.p.z-B_.p.z;
+          const d=Math.sqrt(dx*dx+dy*dy+dz*dz);
+          const maxD=scale*.29;
+          if(d<maxD){
+            const a=(1-d/maxD)*.08*visibility;
+            const depth=.35+.65*A_.q.s;
+            gx.strokeStyle=`hsla(${hue}, 90%, 60%, ${a*depth})`;
+            gx.beginPath(); gx.moveTo(A_.q.x,A_.q.y); gx.lineTo(B_.q.x,B_.q.y); gx.stroke();
+          }
+        }
+      }
 
-    // ═══ ÇEKİRDEK ═══
-    const pulse=1+Math.sin(t*modeState.pulseSpeed)*.045;
-    const coreScale=scale*.34*pulse;
-    const coreBright = intro * intro;
-    radial(cxc,cyc,coreScale,[
-      [0,`rgba(255,255,255,${.95*coreBright})`],
-      [.045,`hsla(${hue}, 100%, 75%, ${.75*coreBright})`],
-      [.18,`hsla(${hue}, 95%, 55%, ${.28*coreBright})`],
-      [.55,`hsla(${hue}, 90%, 40%, ${.08*coreBright})`],
-      [1,"rgba(0,0,0,0)"]
-    ]);
+      // Bulut parçacıkları
+      for(const o of pts){
+        const p=o.p,q=o.q;
+        const pulse=.7+.3*Math.sin(t*1.8+p.pulse);
+        const a=p.alpha*(.45+.55*q.s)*pulse*visibility;
+        const r=Math.max(.45,p.size*q.s);
+        gx.fillStyle=`hsla(${hue}, 90%, 55%, ${a*.34})`;
+        gx.beginPath(); gx.arc(q.x,q.y,r*4.2,0,TAU); gx.fill();
+        gx.fillStyle=`hsla(${hue}, 80%, 70%, ${a*.82})`;
+        gx.beginPath(); gx.arc(q.x,q.y,r,0,TAU); gx.fill();
+      }
 
-    // ═══ YATAY LENS FLARE ═══
-    const fa=(.42+.08*Math.sin(t*2.0))*visibility*scaleFactor;
-    const flareWidth=W*scaleFactor;
-    const fx0=cxc-flareWidth/2;
-    const lg=gx.createLinearGradient(fx0,cyc,fx0+flareWidth,cyc);
-    lg.addColorStop(0,`hsla(${hue},90%,40%,0)`);
-    lg.addColorStop(.18,`hsla(${hue},100%,55%,${fa*.06})`);
-    lg.addColorStop(.40,`hsla(${hue},100%,65%,${fa*.16})`);
-    lg.addColorStop(.495,`hsla(${hue},80%,80%,${fa*.58})`);
-    lg.addColorStop(.5,`rgba(235,255,255,${fa})`);
-    lg.addColorStop(.505,`hsla(${hue},80%,80%,${fa*.58})`);
-    lg.addColorStop(.60,`hsla(${hue},100%,65%,${fa*.16})`);
-    lg.addColorStop(.82,`hsla(${hue},100%,55%,${fa*.06})`);
-    lg.addColorStop(1,`hsla(${hue},90%,40%,0)`);
-    gx.fillStyle=lg; gx.fillRect(fx0,cyc-.8,flareWidth,1.6);
-    gx.fillStyle=`hsla(${hue}, 90%, 70%, ${fa*.10})`;
-    gx.fillRect(cxc-scale*1.35,cyc-.35,scale*2.7,.7);
+      // Sabit yıldızlar
+      for(const s of stars){
+        const q=proj({x:s.x*scaleFactor,y:s.y*scaleFactor,z:s.z*scaleFactor});
+        gx.fillStyle=`hsla(${hue}, 85%, 65%, ${s.a*visibility})`;
+        gx.fillRect(q.x,q.y,s.s,s.s);
+      }
 
-    // ═══ COMPOSITE ═══
-    ctx.globalCompositeOperation="lighter";
-    ctx.drawImage(glow,0,0,W,H);
+      // Çekirdek
+      const pulse=1+Math.sin(t*A.pulse)*.045;
+      const coreScale=Math.max(0.01, scale*.34*pulse);
+      const coreBright = intro * intro;
+      radial(cxc,cyc,coreScale,[
+        [0,`rgba(255,255,255,${.95*coreBright})`],
+        [.045,`hsla(${hue}, 100%, 75%, ${.75*coreBright})`],
+        [.18,`hsla(${hue}, 95%, 55%, ${.28*coreBright})`],
+        [.55,`hsla(${hue}, 90%, 40%, ${.08*coreBright})`],
+        [1,"rgba(0,0,0,0)"]
+      ]);
 
-    ctx.globalCompositeOperation="lighter";
-    for(const o of pts){
-      const p=o.p,q=o.q;
-      const pulse2=.72+.28*Math.sin(t*1.7+p.pulse);
-      const r=Math.max(.35,p.size*q.s*.72);
-      ctx.fillStyle=`hsla(${hue}, 80%, 75%, ${p.alpha*.8*pulse2*visibility})`;
-      ctx.beginPath(); ctx.arc(q.x,q.y,r,0,TAU); ctx.fill();
-    }
+      // Lens flare
+      const fa=(.42+.08*Math.sin(t*2.0))*visibility*scaleFactor;
+      const flareWidth=W*scaleFactor;
+      const fx0=cxc-flareWidth/2;
+      const lg=gx.createLinearGradient(fx0,cyc,fx0+flareWidth,cyc);
+      lg.addColorStop(0,`hsla(${hue},90%,40%,0)`);
+      lg.addColorStop(.18,`hsla(${hue},100%,55%,${fa*.06})`);
+      lg.addColorStop(.40,`hsla(${hue},100%,65%,${fa*.16})`);
+      lg.addColorStop(.495,`hsla(${hue},80%,80%,${fa*.58})`);
+      lg.addColorStop(.5,`rgba(235,255,255,${fa})`);
+      lg.addColorStop(.505,`hsla(${hue},80%,80%,${fa*.58})`);
+      lg.addColorStop(.60,`hsla(${hue},100%,65%,${fa*.16})`);
+      lg.addColorStop(.82,`hsla(${hue},100%,55%,${fa*.06})`);
+      lg.addColorStop(1,`hsla(${hue},90%,40%,0)`);
+      gx.fillStyle=lg; gx.fillRect(fx0,cyc-.8,flareWidth,1.6);
+      gx.fillStyle=`hsla(${hue}, 90%, 70%, ${fa*.10})`;
+      gx.fillRect(cxc-scale*1.35,cyc-.35,scale*2.7,.7);
 
-    const coreR=Math.max(.1,scale*.045);
-    const core=ctx.createRadialGradient(cxc,cyc,0,cxc,cyc,coreR);
-    core.addColorStop(0,`rgba(255,255,255,${coreBright})`);
-    core.addColorStop(.22,`hsla(${hue}, 100%, 88%, ${.98*coreBright})`);
-    core.addColorStop(.7,`hsla(${hue}, 90%, 65%, ${.25*coreBright})`);
-    core.addColorStop(1,"rgba(0,0,0,0)");
-    ctx.fillStyle=core;
-    ctx.beginPath(); ctx.arc(cxc,cyc,coreR,0,TAU); ctx.fill();
-
-    // ═══ KORUMA MODU KALKAN DALGASI ═══
-    if(currentModeKey === "protection" && visibility > 0.5){
-      const shieldPulse = (t * 0.8) % 1;
-      const shieldR = shieldPulse * Math.min(W,H) * 0.55;
-      const shieldAlpha = (1 - shieldPulse) * 0.35 * visibility;
+      // Composite
       ctx.globalCompositeOperation="lighter";
-      ctx.strokeStyle = `hsla(${hue}, 100%, 75%, ${shieldAlpha})`;
-      ctx.lineWidth = 3 * DPR;
-      ctx.beginPath();
-      ctx.arc(cxc, cyc, shieldR, 0, TAU);
-      ctx.stroke();
-    }
+      ctx.drawImage(glow,0,0,W,H);
 
-    ctx.globalCompositeOperation="source-over";
+      ctx.globalCompositeOperation="lighter";
+      for(const o of pts){
+        const p=o.p,q=o.q;
+        const pulse2=.72+.28*Math.sin(t*1.7+p.pulse);
+        const r=Math.max(.35,p.size*q.s*.72);
+        ctx.fillStyle=`hsla(${hue}, 80%, 75%, ${p.alpha*.8*pulse2*visibility})`;
+        ctx.beginPath(); ctx.arc(q.x,q.y,r,0,TAU); ctx.fill();
+      }
+
+      const coreR=Math.max(.1,scale*.045);
+      const core=ctx.createRadialGradient(cxc,cyc,0,cxc,cyc,coreR);
+      core.addColorStop(0,`rgba(255,255,255,${coreBright})`);
+      core.addColorStop(.22,`hsla(${hue}, 100%, 88%, ${.98*coreBright})`);
+      core.addColorStop(.7,`hsla(${hue}, 90%, 65%, ${.25*coreBright})`);
+      core.addColorStop(1,"rgba(0,0,0,0)");
+      ctx.fillStyle=core;
+      ctx.beginPath(); ctx.arc(cxc,cyc,coreR,0,TAU); ctx.fill();
+
+      // Koruma kalkanı
+      if(currentMode === "protection" && visibility > 0.5){
+        const shieldPulse = (t * 0.8) % 1;
+        const shieldR = shieldPulse * Math.min(W,H) * 0.55;
+        const shieldAlpha = (1 - shieldPulse) * 0.35 * visibility;
+        ctx.globalCompositeOperation="lighter";
+        ctx.strokeStyle = `hsla(${hue}, 100%, 75%, ${shieldAlpha})`;
+        ctx.lineWidth = 3 * D;
+        ctx.beginPath(); ctx.arc(cxc, cyc, shieldR, 0, TAU); ctx.stroke();
+      }
+
+      ctx.globalCompositeOperation="source-over";
+    } catch(e){
+      errEl.style.display = "block";
+      errEl.textContent = "Hata: " + e.message;
+      console.error(e);
+    }
     requestAnimationFrame(frame);
   }
 

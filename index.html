@@ -19,16 +19,11 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;background:#0
   background:rgba(0,20,40,.5);border:1px solid rgba(80,200,255,.35);
   color:#fff;cursor:pointer;backdrop-filter:blur(8px);transition:all .3s;
   display:flex;align-items:center;justify-content:center;
-  perspective:200px;perspective-origin:center;
   overflow:hidden;box-sizing:border-box}
 #modes button.on{background:rgba(80,200,255,.4);border-color:#7ce;
   box-shadow:0 0 20px rgba(80,200,255,.7)}
 
-/* Tüm buton içi resimler sabit boyut */
-#modes button img,
-#modes button svg,
-.icon-img,
-.world-icon {
+#modes button img {
   width: 26px !important;
   height: 26px !important;
   max-width: 26px !important;
@@ -39,17 +34,14 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;background:#0
   pointer-events: none;
 }
 
-/* Dünya ikonu — beyaz arka planı sil */
 .world-icon {
   filter: drop-shadow(0 0 8px rgba(80, 200, 255, 0.7));
 }
 
-/* Tehlike ikonu — kırmızı çerçeve YOK, sadece parlama */
 .icon-img {
   filter: drop-shadow(0 0 6px rgba(255, 80, 80, 0.6));
 }
 
-/* Dünya SADECE çalışma modunda döner */
 #modes button[data-mode="work"].on .world-icon {
   animation: spin 6s linear infinite;
 }
@@ -59,7 +51,6 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;background:#0
   to { transform: rotate(360deg); }
 }
 
-/* Tehlike SADECE tehlike modunda döner */
 #modes button[data-mode="danger"].on .icon-img {
   animation: spinDanger 2s linear infinite;
 }
@@ -78,8 +69,8 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;background:#0
 <canvas id="c"></canvas>
 <div id="modes">
   <button data-mode="idle" class="on">◉</button>
-  <button data-mode="work"><img src="world.png" class="world-icon" alt="Çalışma" onerror="this.outerHTML='🌐'"></button>
-  <button data-mode="danger"><img src="danger.png" class="icon-img" alt="Tehlike" onerror="this.outerHTML='⚠'"></button>
+  <button data-mode="work"><img src="world.png" class="world-icon" alt="Çalışma"></button>
+  <button data-mode="danger"><img src="danger.png" class="icon-img" alt="Tehlike"></button>
   <button data-mode="emergency">⚡</button>
   <button data-mode="protection">🛡</button>
 </div>
@@ -117,7 +108,6 @@ if('serviceWorker' in navigator){
 
   const A = { hue:200, pulse:2.15, breathe:0.72, star:0, vib:0 };
 
-  // Audio
   let AC=null, mg=null, atmoStarted=false;
   function initA(){ try{ AC=new (window.AudioContext||window.webkitAudioContext)();
     mg=AC.createGain(); mg.gain.value=0; mg.connect(AC.destination); return true; }catch(e){ return false; } }
@@ -302,7 +292,6 @@ if('serviceWorker' in navigator){
 
       gx.globalCompositeOperation="lighter";
 
-      // WARP YILDIZLARI — dışa akan, twinkle
       const warpAlpha = Math.min(1, A.star / 8);
       if(warpAlpha > 0.02){
         const spread = Math.min(W,H) * 0.9;
@@ -329,7 +318,6 @@ if('serviceWorker' in navigator){
         }
       }
 
-      // Filamentler
       gx.lineCap="round";
       for(const f of trails){
         const a = f.a + t*f.speed*.11;
@@ -344,7 +332,6 @@ if('serviceWorker' in navigator){
         gx.beginPath(); gx.moveTo(x0,y0); gx.quadraticCurveTo(xm,ym,x1,y1); gx.stroke();
       }
 
-      // Bağlantılar
       gx.lineWidth=.65*Math.max(0.1,scaleFactor);
       for(let i=0;i<pts.length;i++){
         const A_=pts[i];
@@ -362,7 +349,6 @@ if('serviceWorker' in navigator){
         }
       }
 
-      // Bulut parçacıkları
       for(const o of pts){
         const p=o.p,q=o.q;
         const pulse=.7+.3*Math.sin(t*1.8+p.pulse);
@@ -374,14 +360,12 @@ if('serviceWorker' in navigator){
         gx.beginPath(); gx.arc(q.x,q.y,r,0,TAU); gx.fill();
       }
 
-      // Sabit yıldızlar
       for(const s of stars){
         const q=proj({x:s.x*scaleFactor,y:s.y*scaleFactor,z:s.z*scaleFactor});
         gx.fillStyle=`hsla(${hue}, 85%, 65%, ${s.a*visibility})`;
         gx.fillRect(q.x,q.y,s.s,s.s);
       }
 
-      // Çekirdek
       const pulse=1+Math.sin(t*A.pulse)*.045;
       const coreScale=Math.max(0.01, scale*.34*pulse);
       const coreBright = intro * intro;
@@ -393,7 +377,6 @@ if('serviceWorker' in navigator){
         [1,"rgba(0,0,0,0)"]
       ]);
 
-      // Lens flare
       const fa=(.42+.08*Math.sin(t*2.0))*visibility*scaleFactor;
       const flareWidth=W*scaleFactor;
       const fx0=cxc-flareWidth/2;
@@ -411,7 +394,6 @@ if('serviceWorker' in navigator){
       gx.fillStyle=`hsla(${hue}, 90%, 70%, ${fa*.10})`;
       gx.fillRect(cxc-scale*1.35,cyc-.35,scale*2.7,.7);
 
-      // Composite
       ctx.globalCompositeOperation="lighter";
       ctx.drawImage(glow,0,0,W,H);
 
@@ -433,7 +415,6 @@ if('serviceWorker' in navigator){
       ctx.fillStyle=core;
       ctx.beginPath(); ctx.arc(cxc,cyc,coreR,0,TAU); ctx.fill();
 
-      // Koruma kalkanı
       if(currentMode === "protection" && visibility > 0.5){
         const shieldPulse = (t * 0.8) % 1;
         const shieldR = shieldPulse * Math.min(W,H) * 0.55;

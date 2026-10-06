@@ -38,8 +38,13 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;background:#0
   filter: drop-shadow(0 0 8px rgba(80, 200, 255, 0.7));
 }
 
-.icon-img {
-  filter: drop-shadow(0 0 6px rgba(255, 80, 80, 0.6));
+/* Danger SVG ikonu — vektörel, şeffaf */
+.danger-icon {
+  width: 26px;
+  height: 26px;
+  color: #ff4444;
+  filter: drop-shadow(0 0 8px rgba(255, 80, 80, 0.9));
+  pointer-events: none;
 }
 
 #modes button[data-mode="work"].on .world-icon {
@@ -51,7 +56,7 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;background:#0
   to { transform: rotate(360deg); }
 }
 
-#modes button[data-mode="danger"].on .icon-img {
+#modes button[data-mode="danger"].on .danger-icon {
   animation: spinDanger 2s linear infinite;
 }
 
@@ -70,7 +75,7 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;background:#0
 <div id="modes">
   <button data-mode="idle" class="on">◉</button>
   <button data-mode="work"><img src="world.png" class="world-icon" alt="Çalışma"></button>
-  <button data-mode="danger"><img src="danger.png" class="icon-img" alt="Tehlike"></button>
+  <button data-mode="danger"><svg class="danger-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></button>
   <button data-mode="emergency">⚡</button>
   <button data-mode="protection">🛡</button>
 </div>

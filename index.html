@@ -14,192 +14,79 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000;
   -webkit-tap-highlight-color:transparent;user-select:none}
 canvas{position:fixed;inset:0;width:100%;height:100%;display:block;background:#000}
 
-/* ÜST BAR — TEK SATIR GARANTİLİ */
-#modes{
-  position:fixed;
-  top:14px;
-  right:14px;
-  z-index:100;
-  display:flex;
-  flex-direction:row;
-  flex-wrap:nowrap;
-  gap:6px;
-  white-space:nowrap;
-}
-
 #modes button{
-  width:44px;
-  min-width:44px;
-  max-width:44px;
-  height:44px;
-  min-height:44px;
-  max-height:44px;
-  padding:4px;
-  font-size:18px;
-  border-radius:50%;
+  width:44px;min-width:44px;max-width:44px;
+  height:44px;min-height:44px;max-height:44px;
+  flex:0 0 44px;flex-shrink:0;flex-grow:0;
+  padding:4px;font-size:18px;border-radius:50%;
   background:rgba(0,20,40,.5);
   border:1px solid rgba(80,200,255,.35);
-  color:#fff;
-  cursor:pointer;
-  backdrop-filter:blur(8px);
-  transition:all .3s;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  overflow:hidden;
-  box-sizing:border-box;
-  flex-shrink:0;
+  color:#fff;cursor:pointer;
+  backdrop-filter:blur(8px);transition:all .3s;
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;box-sizing:border-box;
 }
 #modes button.on{
   background:rgba(80,200,255,.4);
   border-color:#7ce;
   box-shadow:0 0 20px rgba(80,200,255,.7);
 }
-
-/* TÜM BUTON İÇİ RESİMLER — KESİN LİMİT */
 #modes button img{
-  width:26px !important;
-  height:26px !important;
-  max-width:26px !important;
-  max-height:26px !important;
-  min-width:0 !important;
-  min-height:0 !important;
-  object-fit:contain !important;
-  display:block !important;
-  border-radius:50%;
-  pointer-events:none;
-  flex-shrink:0;
+  width:26px;height:26px;
+  max-width:26px;max-height:26px;
+  object-fit:contain;display:block;
+  border-radius:50%;pointer-events:none;
 }
-
+#modes button svg{
+  width:26px;height:26px;
+  pointer-events:none;display:block;
+}
 .world-icon{
   filter:drop-shadow(0 0 8px rgba(80,200,255,.7));
 }
-
-.icon-img{
-  filter:drop-shadow(0 0 8px rgba(255,80,80,.8));
+.danger-icon{
+  filter:drop-shadow(0 0 8px rgba(255,80,80,.9));
+  color:#ff4444;
 }
-
 #modes button[data-mode="work"].on .world-icon{
   animation:spin 6s linear infinite;
 }
-
 @keyframes spin{
   from{transform:rotate(0deg);}
   to{transform:rotate(360deg);}
 }
-
-#modes button[data-mode="danger"].on .icon-img{
+#modes button[data-mode="danger"].on .danger-icon{
   animation:spinDanger 2s linear infinite;
 }
-
 @keyframes spinDanger{
   from{transform:rotate(0deg);}
   to{transform:rotate(360deg);}
 }
-
-#err{position:fixed;bottom:6px;left:6px;color:#f66;font-size:11px;z-index:999;
+#err{
+  position:fixed;bottom:6px;left:6px;color:#f66;font-size:11px;z-index:999;
   max-width:90vw;word-break:break-all;display:none;
-  background:rgba(0,0,0,.7);padding:4px 8px;border-radius:6px}
-  
-  #modes{
-  position:fixed !important;
-  top:14px !important;
-  right:14px !important;
-  left:auto !important;
-  z-index:100 !important;
-  display:inline-flex !important;
-  flex-direction:row !important;
-  flex-wrap:nowrap !important;
-  gap:6px !important;
-  white-space:nowrap !important;
-  width:max-content !important;
-  max-width:none !important;
-  align-items:center !important;
-  justify-content:flex-end !important;
-}
-
-#modes button{
-  width:44px !important;
-  min-width:44px !important;
-  max-width:44px !important;
-  height:44px !important;
-  min-height:44px !important;
-  max-height:44px !important;
-  flex:0 0 44px !important;
-  flex-shrink:0 !important;
-  flex-grow:0 !important;
-  padding:4px !important;
-  font-size:18px !important;
-  border-radius:50% !important;
-  background:rgba(0,20,40,.5) !important;
-  border:1px solid rgba(80,200,255,.35) !important;
-  color:#fff !important;
-  cursor:pointer !important;
-  backdrop-filter:blur(8px) !important;
-  transition:all .3s !important;
-  display:flex !important;
-  align-items:center !important;
-  justify-content:center !important;
-  overflow:hidden !important;
-  box-sizing:border-box !important;
-}
-
-#modes button.on{
-  background:rgba(80,200,255,.4) !important;
-  border-color:#7ce !important;
-  box-shadow:0 0 20px rgba(80,200,255,.7) !important;
-}
-
-#modes button img{
-  width:26px !important;
-  height:26px !important;
-  max-width:26px !important;
-  max-height:26px !important;
-  min-width:0 !important;
-  min-height:0 !important;
-  object-fit:cover !important;
-  display:block !important;
-  border-radius:50% !important;
-  pointer-events:none !important;
-  flex:0 0 auto !important;
-}
-
-.world-icon{
-  filter:drop-shadow(0 0 8px rgba(80,200,255,.7)) !important;
-}
-
-.icon-img{
-  filter:drop-shadow(0 0 8px rgba(255,80,80,.8)) !important;
-}
-
-#modes button[data-mode="work"].on .world-icon{
-  animation:spin 6s linear infinite !important;
-}
-
-@keyframes spin{
-  from{transform:rotate(0deg);}
-  to{transform:rotate(360deg);}
-}
-
-#modes button[data-mode="danger"].on .icon-img{
-  animation:spinDanger 2s linear infinite !important;
-}
-
-@keyframes spinDanger{
-  from{transform:rotate(0deg);}
-  to{transform:rotate(360deg);}
+  background:rgba(0,0,0,.7);padding:4px 8px;border-radius:6px;
 }
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
-<div id="modes">
+
+<!-- BUTON GRUBU: inline stiller ile KİLİTLİ -->
+<div id="modes" style="position:fixed;top:14px;right:14px;left:auto;bottom:auto;z-index:100;display:flex;flex-direction:row;flex-wrap:nowrap;gap:6px;white-space:nowrap;width:max-content;max-width:none;margin:0;padding:0;align-items:center;justify-content:flex-end;">
   <button data-mode="idle" class="on">◉</button>
   <button data-mode="work"><img src="world.png" class="world-icon" alt="Çalışma"></button>
-  <button data-mode="danger"><img src="danger.png" class="icon-img" alt="Tehlike"></button>
+  <button data-mode="danger">
+    <svg class="danger-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+      <line x1="12" y1="9" x2="12" y2="13"/>
+      <line x1="12" y1="17" x2="12.01" y2="17"/>
+    </svg>
+  </button>
   <button data-mode="emergency">⚡</button>
   <button data-mode="protection">🛡</button>
 </div>
+
 <div id="err"></div>
 
 <script>
@@ -235,95 +122,149 @@ if('serviceWorker' in navigator){
   const A = { hue:200, pulse:2.15, breathe:0.72, star:0, vib:0 };
 
   let AC=null, mg=null, atmoStarted=false;
-  function initA(){ try{ AC=new (window.AudioContext||window.webkitAudioContext)();
-    mg=AC.createGain(); mg.gain.value=0; mg.connect(AC.destination); return true; }catch(e){ return false; } }
+  function initA(){
+    try{
+      AC = new (window.AudioContext||window.webkitAudioContext)();
+      mg = AC.createGain();
+      mg.gain.value = 0;
+      mg.connect(AC.destination);
+      return true;
+    }catch(e){ return false; }
+  }
   function atmo(){
-    if(!AC||atmoStarted) return; atmoStarted=true;
-    const now=AC.currentTime, dur=60;
-    const nb=AC.createBuffer(1,AC.sampleRate*dur,AC.sampleRate); const nd=nb.getChannelData(0); let l=0;
-    for(let i=0;i<nd.length;i++){ const w=Math.random()*2-1; l=(l+0.02*w)/1.02; nd[i]=l*5; }
-    const ns=AC.createBufferSource(); ns.buffer=nb; ns.loop=true;
-    const lp=AC.createBiquadFilter(); lp.type="lowpass"; lp.frequency.value=220;
-    const bs=AC.createBiquadFilter(); bs.type="lowshelf"; bs.frequency.value=80; bs.gain.value=12;
-    const sg=AC.createGain(); sg.gain.value=0.30;
-    const sub=AC.createOscillator(); sub.type="sine"; sub.frequency.value=40;
-    const subG=AC.createGain(); subG.gain.value=0.08;
+    if(!AC || atmoStarted) return;
+    atmoStarted = true;
+    const now = AC.currentTime, dur = 60;
+    const nb = AC.createBuffer(1, AC.sampleRate*dur, AC.sampleRate);
+    const nd = nb.getChannelData(0);
+    let l = 0;
+    for(let i=0;i<nd.length;i++){
+      const w = Math.random()*2-1;
+      l = (l + 0.02*w) / 1.02;
+      nd[i] = l * 5;
+    }
+    const ns = AC.createBufferSource();
+    ns.buffer = nb;
+    ns.loop = true;
+    const lp = AC.createBiquadFilter();
+    lp.type = "lowpass"; lp.frequency.value = 220;
+    const bs = AC.createBiquadFilter();
+    bs.type = "lowshelf"; bs.frequency.value = 80; bs.gain.value = 12;
+    const sg = AC.createGain(); sg.gain.value = 0.30;
+    const sub = AC.createOscillator();
+    sub.type = "sine"; sub.frequency.value = 40;
+    const subG = AC.createGain(); subG.gain.value = 0.08;
     ns.connect(lp).connect(bs).connect(sg).connect(mg);
     sub.connect(subG).connect(mg);
     ns.start(now); sub.start(now);
-    mg.gain.setValueAtTime(0,now);
-    mg.gain.linearRampToValueAtTime(0.30,now+0.15);
-    mg.gain.linearRampToValueAtTime(0.0,now+6);
+    mg.gain.setValueAtTime(0, now);
+    mg.gain.linearRampToValueAtTime(0.30, now+0.15);
+    mg.gain.linearRampToValueAtTime(0.0, now+6);
   }
-  function tryA(){ if(atmoStarted) return; if(!AC){ if(!initA()) return; }
-    if(AC.state==="suspended") AC.resume().then(atmo).catch(()=>{}); else atmo(); }
+  function tryA(){
+    if(atmoStarted) return;
+    if(!AC){ if(!initA()) return; }
+    if(AC.state === "suspended") AC.resume().then(atmo).catch(()=>{});
+    else atmo();
+  }
   tryA(); setTimeout(tryA,100); setTimeout(tryA,500);
-  const kick=()=>{ tryA(); };
-  document.addEventListener("click",kick);
-  document.addEventListener("touchstart",kick);
+  const kick = ()=>{ tryA(); };
+  document.addEventListener("click", kick);
+  document.addEventListener("touchstart", kick);
 
   function resize(){
-    W=innerWidth; H=innerHeight; D=Math.min(devicePixelRatio||1,2);
-    c.width=W*D; c.height=H*D; glow.width=W*D; glow.height=H*D;
-    ctx.setTransform(D,0,0,D,0,0); gx.setTransform(D,0,0,D,0,0);
-    cx=W*.5; cy=H*.5; build();
+    W = innerWidth; H = innerHeight;
+    D = Math.min(devicePixelRatio||1, 2);
+    c.width = W*D; c.height = H*D;
+    glow.width = W*D; glow.height = H*D;
+    ctx.setTransform(D,0,0,D,0,0);
+    gx.setTransform(D,0,0,D,0,0);
+    cx = W*.5; cy = H*.5;
+    build();
   }
-  addEventListener("resize",resize);
-  addEventListener("orientationchange",()=>setTimeout(resize,300));
+  addEventListener("resize", resize);
+  addEventListener("orientationchange", ()=>setTimeout(resize,300));
 
-  function gauss(){let a=0,b=0;while(!a)a=Math.random();while(!b)b=Math.random();
-    return Math.sqrt(-2*Math.log(a))*Math.cos(TAU*b);}
+  function gauss(){
+    let a=0, b=0;
+    while(!a) a = Math.random();
+    while(!b) b = Math.random();
+    return Math.sqrt(-2*Math.log(a)) * Math.cos(TAU*b);
+  }
 
   function build(){
     P=[]; stars=[]; trails=[]; warpStars=[];
-    const scale=Math.min(W,H)*.235;
-    const count=Math.min(900,Math.max(520,Math.floor(W*H/2600)));
+    const scale = Math.min(W,H) * .235;
+    const count = Math.min(900, Math.max(520, Math.floor(W*H/2600)));
     for(let i=0;i<count;i++){
-      const u=Math.random()*2-1;
-      const ph=Math.random()*TAU;
-      const s=Math.pow(Math.random(),.58);
-      const z=u;
-      const ring=Math.sqrt(1-u*u);
-      const lobe=1+.13*Math.cos(ph*2)+.07*Math.cos(ph*5+z*3);
-      const brain=.86+.15*Math.sin(Math.acos(u)*2.1)+.07*Math.sin(ph*7+u*4);
-      const r=scale*(.78+.32*s)*brain*lobe;
-      let x=ring*Math.cos(ph)*r;
-      let y=ring*Math.sin(ph)*r*.92;
-      let zz=z*r*.82;
-      x+=Math.sign(x||1)*Math.pow(Math.abs(x)/scale,3)*scale*.035;
-      const edge=1-Math.min(1,Math.sqrt(x*x+y*y+zz*zz)/(scale*1.3));
-      P.push({x,y,z:zz,ox:x,oy:y,oz:zz,phase:Math.random()*TAU,
-        speed:.45+Math.random()*.75,size:.45+Math.random()*1.55,
-        alpha:.25+Math.random()*.62,edge,pulse:Math.random()*TAU});
+      const u = Math.random()*2-1;
+      const ph = Math.random()*TAU;
+      const s = Math.pow(Math.random(), .58);
+      const z = u;
+      const ring = Math.sqrt(1-u*u);
+      const lobe = 1 + .13*Math.cos(ph*2) + .07*Math.cos(ph*5+z*3);
+      const brain = .86 + .15*Math.sin(Math.acos(u)*2.1) + .07*Math.sin(ph*7+u*4);
+      const r = scale * (.78 + .32*s) * brain * lobe;
+      let x = ring*Math.cos(ph)*r;
+      let y = ring*Math.sin(ph)*r*.92;
+      let zz = z*r*.82;
+      x += Math.sign(x||1) * Math.pow(Math.abs(x)/scale, 3) * scale * .035;
+      const edge = 1 - Math.min(1, Math.sqrt(x*x+y*y+zz*zz)/(scale*1.3));
+      P.push({
+        x, y, z:zz, ox:x, oy:y, oz:zz,
+        phase: Math.random()*TAU,
+        speed: .45 + Math.random()*.75,
+        size: .45 + Math.random()*1.55,
+        alpha: .25 + Math.random()*.62,
+        edge, pulse: Math.random()*TAU
+      });
     }
     for(let i=0;i<150;i++){
-      const a=Math.random()*TAU,r=scale*(1.05+Math.random()*1.8);
-      stars.push({x:Math.cos(a)*r*(.8+Math.random()*.7),
-        y:Math.sin(a)*r*(.45+Math.random()*.7),
-        z:gauss()*scale*.8,a:.08+Math.random()*.3,s:.3+Math.random()*1.1});
+      const a = Math.random()*TAU;
+      const r = scale * (1.05 + Math.random()*1.8);
+      stars.push({
+        x: Math.cos(a)*r*(.8+Math.random()*.7),
+        y: Math.sin(a)*r*(.45+Math.random()*.7),
+        z: gauss()*scale*.8,
+        a: .08 + Math.random()*.3,
+        s: .3 + Math.random()*1.1
+      });
     }
     for(let i=0;i<90;i++){
-      const a=Math.random()*TAU;
-      trails.push({a,r:scale*(.62+Math.random()*.52),len:scale*(.18+Math.random()*.42),
-        wob:Math.random()*TAU,speed:.25+Math.random()*.5,alpha:.04+Math.random()*.12});
+      const a = Math.random()*TAU;
+      trails.push({
+        a,
+        r: scale*(.62 + Math.random()*.52),
+        len: scale*(.18 + Math.random()*.42),
+        wob: Math.random()*TAU,
+        speed: .25 + Math.random()*.5,
+        alpha: .04 + Math.random()*.12
+      });
     }
     for(let i=0;i<250;i++){
       warpStars.push({
-        x:(Math.random()-0.5)*2,
-        y:(Math.random()-0.5)*2,
-        z:100+Math.random()*700,
-        a:0.5+Math.random()*0.5,
-        s:0.6+Math.random()*1.5,
+        x: (Math.random()-0.5)*2,
+        y: (Math.random()-0.5)*2,
+        z: 100 + Math.random()*700,
+        a: 0.5 + Math.random()*0.5,
+        s: 0.6 + Math.random()*1.5
       });
     }
   }
 
-  function proj(p){const f=720/(720+p.z);return{x:cx+p.x*f,y:cy+p.y*f,s:f};}
-  function radial(X,Y,R,stops){
+  function proj(p){
+    const f = 720/(720 + p.z);
+    return { x: cx + p.x*f, y: cy + p.y*f, s: f };
+  }
+
+  function radial(X, Y, R, stops){
     if(!isFinite(R) || R <= 0) return;
-    const g=gx.createRadialGradient(X,Y,0,X,Y,R);
-    for(const s of stops)g.addColorStop(s[0],s[1]);
-    gx.fillStyle=g; gx.beginPath(); gx.arc(X,Y,R,0,TAU); gx.fill();
+    const g = gx.createRadialGradient(X, Y, 0, X, Y, R);
+    for(const s of stops) g.addColorStop(s[0], s[1]);
+    gx.fillStyle = g;
+    gx.beginPath();
+    gx.arc(X, Y, R, 0, TAU);
+    gx.fill();
   }
 
   let currentMode = "idle";
@@ -336,12 +277,12 @@ if('serviceWorker' in navigator){
   modeButtons.forEach(b => {
     const handler = (e) => { e.preventDefault(); setMode(b.dataset.mode); };
     b.addEventListener("click", handler);
-    b.addEventListener("touchstart", handler, {passive:false});
+    b.addEventListener("touchstart", handler, { passive:false });
   });
 
   function frame(now){
     try {
-      const dt = Math.min((now-last)/16.67||1, 2);
+      const dt = Math.min((now-last)/16.67 || 1, 2);
       last = now;
       t += .012 * dt;
 
@@ -368,55 +309,60 @@ if('serviceWorker' in navigator){
 
       const elapsed = now - introStart;
       const raw = Math.min(1, elapsed/INTRO_DURATION);
-      const intro = raw < 0.5 ? 4*raw*raw*raw : 1 - Math.pow(-2*raw+2,3)/2;
+      const intro = raw < 0.5
+        ? 4*raw*raw*raw
+        : 1 - Math.pow(-2*raw+2, 3)/2;
       const visibility = intro;
       const scaleFactor = intro;
 
-      ctx.globalCompositeOperation="source-over";
-      ctx.fillStyle="rgba(0,0,3,.30)";
+      ctx.globalCompositeOperation = "source-over";
+      ctx.fillStyle = "rgba(0,0,3,.30)";
       ctx.fillRect(0,0,W,H);
 
-      const bg=ctx.createRadialGradient(cxc,cyc,0,cxc,cyc,Math.min(W,H)*.62);
-      bg.addColorStop(0,`hsla(${hue},80%,8%,${.20*visibility})`);
-      bg.addColorStop(.45,`hsla(${hue},70%,4%,${.10*visibility})`);
-      bg.addColorStop(1,"rgba(0,0,0,0)");
-      ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+      const bg = ctx.createRadialGradient(cxc, cyc, 0, cxc, cyc, Math.min(W,H)*.62);
+      bg.addColorStop(0, `hsla(${hue},80%,8%,${.20*visibility})`);
+      bg.addColorStop(.45, `hsla(${hue},70%,4%,${.10*visibility})`);
+      bg.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = bg;
+      ctx.fillRect(0,0,W,H);
 
-      const scale = Math.min(W,H)*.235*scaleFactor;
+      const scale = Math.min(W,H) * .235 * scaleFactor;
       const breathe = 1 + Math.sin(t * A.breathe) * .018 * scaleFactor;
       const spin = t * .045;
 
       for(const p of P){
         const ang = p.phase + t*p.speed*.17;
-        const nx=Math.sin(ang+p.y*.008)*2.2*scaleFactor;
-        const ny=Math.cos(ang+p.x*.007)*1.7*scaleFactor;
-        const nz=Math.sin(ang+p.z*.006)*1.4*scaleFactor;
-        const tgt=p.edge<.15?.75:1;
-        p.x += ((p.ox*scaleFactor*breathe*tgt+nx)-p.x)*.010*dt;
-        p.y += ((p.oy*scaleFactor*breathe*tgt+ny)-p.y)*.010*dt;
-        p.z += ((p.oz*scaleFactor+nz)-p.z)*.009*dt;
+        const nx = Math.sin(ang + p.y*.008) * 2.2 * scaleFactor;
+        const ny = Math.cos(ang + p.x*.007) * 1.7 * scaleFactor;
+        const nz = Math.sin(ang + p.z*.006) * 1.4 * scaleFactor;
+        const tgt = p.edge < .15 ? .75 : 1;
+        p.x += ((p.ox*scaleFactor*breathe*tgt + nx) - p.x) * .010 * dt;
+        p.y += ((p.oy*scaleFactor*breathe*tgt + ny) - p.y) * .010 * dt;
+        p.z += ((p.oz*scaleFactor + nz) - p.z) * .009 * dt;
       }
 
-      const pts=[];
-      const ca=Math.cos(spin), sa=Math.sin(spin);
+      const pts = [];
+      const ca = Math.cos(spin), sa = Math.sin(spin);
       for(const p of P){
-        const rx=p.x*ca-p.z*sa, rz=p.x*sa+p.z*ca;
-        const pp={x:rx,y:p.y,z:rz};
-        const q=proj(pp); pts.push({p:pp,q});
+        const rx = p.x*ca - p.z*sa;
+        const rz = p.x*sa + p.z*ca;
+        const pp = { x:rx, y:p.y, z:rz };
+        const q = proj(pp);
+        pts.push({ p:pp, q });
       }
-      pts.sort((a,b)=>b.p.z-a.p.z);
+      pts.sort((a,b) => b.p.z - a.p.z);
 
-      gx.globalCompositeOperation="source-over";
+      gx.globalCompositeOperation = "source-over";
       gx.clearRect(0,0,W,H);
 
-      radial(cxc,cyc,scale*1.12,[
-        [0,`hsla(${hue},90%,45%,${.20*visibility})`],
-        [.24,`hsla(${hue},85%,40%,${.11*visibility})`],
-        [.62,`hsla(${hue},80%,25%,${.04*visibility})`],
-        [1,"rgba(0,0,0,0)"]
+      radial(cxc, cyc, scale*1.12, [
+        [0, `hsla(${hue},90%,45%,${.20*visibility})`],
+        [.24, `hsla(${hue},85%,40%,${.11*visibility})`],
+        [.62, `hsla(${hue},80%,25%,${.04*visibility})`],
+        [1, "rgba(0,0,0,0)"]
       ]);
 
-      gx.globalCompositeOperation="lighter";
+      gx.globalCompositeOperation = "lighter";
 
       const warpAlpha = Math.min(1, A.star / 8);
       if(warpAlpha > 0.02){
@@ -434,124 +380,133 @@ if('serviceWorker' in navigator){
           const y = cyc + ws.y * f * spread;
           const size = ws.s * f * D * 1.2;
           const baseAlpha = ws.a * warpAlpha * Math.min(1, f * 1.2);
-          const twinkle = 0.55 + 0.45 * Math.sin(t * 3.5 + ws.x * 12 + ws.y * 8);
-          const pHue = (hue + ws.x * 30 + 360) % 360;
+          const twinkle = 0.55 + 0.45 * Math.sin(t*3.5 + ws.x*12 + ws.y*8);
+          const pHue = (hue + ws.x*30 + 360) % 360;
           const starAlpha = baseAlpha * twinkle;
           gx.fillStyle = `hsla(${pHue}, 90%, 75%, ${starAlpha * 0.25})`;
-          gx.beginPath(); gx.arc(x, y, Math.max(1, size * 2.4), 0, TAU); gx.fill();
+          gx.beginPath(); gx.arc(x, y, Math.max(1, size*2.4), 0, TAU); gx.fill();
           gx.fillStyle = `hsla(${pHue}, 60%, 92%, ${starAlpha})`;
           gx.beginPath(); gx.arc(x, y, Math.max(0.5, size), 0, TAU); gx.fill();
         }
       }
 
-      gx.lineCap="round";
+      gx.lineCap = "round";
       for(const f of trails){
         const a = f.a + t*f.speed*.11;
-        const x0=cxc+Math.cos(a)*f.r*scaleFactor;
-        const y0=cyc+Math.sin(a)*f.r*.62*scaleFactor;
-        const x1=cxc+Math.cos(a+.25+Math.sin(f.wob+t)*.12)*(f.r+f.len)*scaleFactor;
-        const y1=cyc+Math.sin(a+.25+Math.sin(f.wob+t)*.12)*(f.r+f.len)*.62*scaleFactor;
-        const xm=(x0+x1)/2+Math.sin(t+f.wob)*18*scaleFactor;
-        const ym=(y0+y1)/2+Math.cos(t*.8+f.wob)*15*scaleFactor;
-        gx.strokeStyle=`hsla(${hue}, 95%, 55%, ${f.alpha*visibility})`;
-        gx.lineWidth=.8*scaleFactor;
-        gx.beginPath(); gx.moveTo(x0,y0); gx.quadraticCurveTo(xm,ym,x1,y1); gx.stroke();
+        const x0 = cxc + Math.cos(a)*f.r*scaleFactor;
+        const y0 = cyc + Math.sin(a)*f.r*.62*scaleFactor;
+        const x1 = cxc + Math.cos(a+.25+Math.sin(f.wob+t)*.12)*(f.r+f.len)*scaleFactor;
+        const y1 = cyc + Math.sin(a+.25+Math.sin(f.wob+t)*.12)*(f.r+f.len)*.62*scaleFactor;
+        const xm = (x0+x1)/2 + Math.sin(t+f.wob)*18*scaleFactor;
+        const ym = (y0+y1)/2 + Math.cos(t*.8+f.wob)*15*scaleFactor;
+        gx.strokeStyle = `hsla(${hue}, 95%, 55%, ${f.alpha*visibility})`;
+        gx.lineWidth = .8*scaleFactor;
+        gx.beginPath();
+        gx.moveTo(x0, y0);
+        gx.quadraticCurveTo(xm, ym, x1, y1);
+        gx.stroke();
       }
 
-      gx.lineWidth=.65*Math.max(0.1,scaleFactor);
+      gx.lineWidth = .65*Math.max(0.1, scaleFactor);
       for(let i=0;i<pts.length;i++){
-        const A_=pts[i];
-        for(let j=i+1;j<Math.min(pts.length,i+28);j++){
-          const B_=pts[j];
-          const dx=A_.p.x-B_.p.x,dy=A_.p.y-B_.p.y,dz=A_.p.z-B_.p.z;
-          const d=Math.sqrt(dx*dx+dy*dy+dz*dz);
-          const maxD=scale*.29;
-          if(d<maxD){
-            const a=(1-d/maxD)*.08*visibility;
-            const depth=.35+.65*A_.q.s;
-            gx.strokeStyle=`hsla(${hue}, 90%, 60%, ${a*depth})`;
-            gx.beginPath(); gx.moveTo(A_.q.x,A_.q.y); gx.lineTo(B_.q.x,B_.q.y); gx.stroke();
+        const A_ = pts[i];
+        for(let j=i+1;j<Math.min(pts.length, i+28);j++){
+          const B_ = pts[j];
+          const dx = A_.p.x - B_.p.x;
+          const dy = A_.p.y - B_.p.y;
+          const dz = A_.p.z - B_.p.z;
+          const d = Math.sqrt(dx*dx + dy*dy + dz*dz);
+          const maxD = scale*.29;
+          if(d < maxD){
+            const a = (1 - d/maxD) * .08 * visibility;
+            const depth = .35 + .65*A_.q.s;
+            gx.strokeStyle = `hsla(${hue}, 90%, 60%, ${a*depth})`;
+            gx.beginPath();
+            gx.moveTo(A_.q.x, A_.q.y);
+            gx.lineTo(B_.q.x, B_.q.y);
+            gx.stroke();
           }
         }
       }
 
       for(const o of pts){
-        const p=o.p,q=o.q;
-        const pulse=.7+.3*Math.sin(t*1.8+p.pulse);
-        const a=p.alpha*(.45+.55*q.s)*pulse*visibility;
-        const r=Math.max(.45,p.size*q.s);
-        gx.fillStyle=`hsla(${hue}, 90%, 55%, ${a*.34})`;
-        gx.beginPath(); gx.arc(q.x,q.y,r*4.2,0,TAU); gx.fill();
-        gx.fillStyle=`hsla(${hue}, 80%, 70%, ${a*.82})`;
-        gx.beginPath(); gx.arc(q.x,q.y,r,0,TAU); gx.fill();
+        const p = o.p, q = o.q;
+        const pulse = .7 + .3*Math.sin(t*1.8 + p.pulse);
+        const a = p.alpha * (.45 + .55*q.s) * pulse * visibility;
+        const r = Math.max(.45, p.size*q.s);
+        gx.fillStyle = `hsla(${hue}, 90%, 55%, ${a*.34})`;
+        gx.beginPath(); gx.arc(q.x, q.y, r*4.2, 0, TAU); gx.fill();
+        gx.fillStyle = `hsla(${hue}, 80%, 70%, ${a*.82})`;
+        gx.beginPath(); gx.arc(q.x, q.y, r, 0, TAU); gx.fill();
       }
 
       for(const s of stars){
-        const q=proj({x:s.x*scaleFactor,y:s.y*scaleFactor,z:s.z*scaleFactor});
-        gx.fillStyle=`hsla(${hue}, 85%, 65%, ${s.a*visibility})`;
-        gx.fillRect(q.x,q.y,s.s,s.s);
+        const q = proj({ x:s.x*scaleFactor, y:s.y*scaleFactor, z:s.z*scaleFactor });
+        gx.fillStyle = `hsla(${hue}, 85%, 65%, ${s.a*visibility})`;
+        gx.fillRect(q.x, q.y, s.s, s.s);
       }
 
-      const pulse=1+Math.sin(t*A.pulse)*.045;
-      const coreScale=Math.max(0.01, scale*.34*pulse);
+      const pulse = 1 + Math.sin(t*A.pulse)*.045;
+      const coreScale = Math.max(0.01, scale*.34*pulse);
       const coreBright = intro * intro;
-      radial(cxc,cyc,coreScale,[
-        [0,`rgba(255,255,255,${.95*coreBright})`],
-        [.045,`hsla(${hue}, 100%, 75%, ${.75*coreBright})`],
-        [.18,`hsla(${hue}, 95%, 55%, ${.28*coreBright})`],
-        [.55,`hsla(${hue}, 90%, 40%, ${.08*coreBright})`],
-        [1,"rgba(0,0,0,0)"]
+      radial(cxc, cyc, coreScale, [
+        [0, `rgba(255,255,255,${.95*coreBright})`],
+        [.045, `hsla(${hue}, 100%, 75%, ${.75*coreBright})`],
+        [.18, `hsla(${hue}, 95%, 55%, ${.28*coreBright})`],
+        [.55, `hsla(${hue}, 90%, 40%, ${.08*coreBright})`],
+        [1, "rgba(0,0,0,0)"]
       ]);
 
-      const fa=(.42+.08*Math.sin(t*2.0))*visibility*scaleFactor;
-      const flareWidth=W*scaleFactor;
-      const fx0=cxc-flareWidth/2;
-      const lg=gx.createLinearGradient(fx0,cyc,fx0+flareWidth,cyc);
-      lg.addColorStop(0,`hsla(${hue},90%,40%,0)`);
-      lg.addColorStop(.18,`hsla(${hue},100%,55%,${fa*.06})`);
-      lg.addColorStop(.40,`hsla(${hue},100%,65%,${fa*.16})`);
-      lg.addColorStop(.495,`hsla(${hue},80%,80%,${fa*.58})`);
-      lg.addColorStop(.5,`rgba(235,255,255,${fa})`);
-      lg.addColorStop(.505,`hsla(${hue},80%,80%,${fa*.58})`);
-      lg.addColorStop(.60,`hsla(${hue},100%,65%,${fa*.16})`);
-      lg.addColorStop(.82,`hsla(${hue},100%,55%,${fa*.06})`);
-      lg.addColorStop(1,`hsla(${hue},90%,40%,0)`);
-      gx.fillStyle=lg; gx.fillRect(fx0,cyc-.8,flareWidth,1.6);
-      gx.fillStyle=`hsla(${hue}, 90%, 70%, ${fa*.10})`;
-      gx.fillRect(cxc-scale*1.35,cyc-.35,scale*2.7,.7);
+      const fa = (.42 + .08*Math.sin(t*2.0)) * visibility * scaleFactor;
+      const flareWidth = W * scaleFactor;
+      const fx0 = cxc - flareWidth/2;
+      const lg = gx.createLinearGradient(fx0, cyc, fx0+flareWidth, cyc);
+      lg.addColorStop(0, `hsla(${hue},90%,40%,0)`);
+      lg.addColorStop(.18, `hsla(${hue},100%,55%,${fa*.06})`);
+      lg.addColorStop(.40, `hsla(${hue},100%,65%,${fa*.16})`);
+      lg.addColorStop(.495, `hsla(${hue},80%,80%,${fa*.58})`);
+      lg.addColorStop(.5, `rgba(235,255,255,${fa})`);
+      lg.addColorStop(.505, `hsla(${hue},80%,80%,${fa*.58})`);
+      lg.addColorStop(.60, `hsla(${hue},100%,65%,${fa*.16})`);
+      lg.addColorStop(.82, `hsla(${hue},100%,55%,${fa*.06})`);
+      lg.addColorStop(1, `hsla(${hue},90%,40%,0)`);
+      gx.fillStyle = lg;
+      gx.fillRect(fx0, cyc-.8, flareWidth, 1.6);
+      gx.fillStyle = `hsla(${hue}, 90%, 70%, ${fa*.10})`;
+      gx.fillRect(cxc - scale*1.35, cyc-.35, scale*2.7, .7);
 
-      ctx.globalCompositeOperation="lighter";
-      ctx.drawImage(glow,0,0,W,H);
+      ctx.globalCompositeOperation = "lighter";
+      ctx.drawImage(glow, 0, 0, W, H);
 
-      ctx.globalCompositeOperation="lighter";
+      ctx.globalCompositeOperation = "lighter";
       for(const o of pts){
-        const p=o.p,q=o.q;
-        const pulse2=.72+.28*Math.sin(t*1.7+p.pulse);
-        const r=Math.max(.35,p.size*q.s*.72);
-        ctx.fillStyle=`hsla(${hue}, 80%, 75%, ${p.alpha*.8*pulse2*visibility})`;
-        ctx.beginPath(); ctx.arc(q.x,q.y,r,0,TAU); ctx.fill();
+        const p = o.p, q = o.q;
+        const pulse2 = .72 + .28*Math.sin(t*1.7 + p.pulse);
+        const r = Math.max(.35, p.size*q.s*.72);
+        ctx.fillStyle = `hsla(${hue}, 80%, 75%, ${p.alpha*.8*pulse2*visibility})`;
+        ctx.beginPath(); ctx.arc(q.x, q.y, r, 0, TAU); ctx.fill();
       }
 
-      const coreR=Math.max(.1,scale*.045);
-      const core=ctx.createRadialGradient(cxc,cyc,0,cxc,cyc,coreR);
-      core.addColorStop(0,`rgba(255,255,255,${coreBright})`);
-      core.addColorStop(.22,`hsla(${hue}, 100%, 88%, ${.98*coreBright})`);
-      core.addColorStop(.7,`hsla(${hue}, 90%, 65%, ${.25*coreBright})`);
-      core.addColorStop(1,"rgba(0,0,0,0)");
-      ctx.fillStyle=core;
-      ctx.beginPath(); ctx.arc(cxc,cyc,coreR,0,TAU); ctx.fill();
+      const coreR = Math.max(.1, scale*.045);
+      const core = ctx.createRadialGradient(cxc, cyc, 0, cxc, cyc, coreR);
+      core.addColorStop(0, `rgba(255,255,255,${coreBright})`);
+      core.addColorStop(.22, `hsla(${hue}, 100%, 88%, ${.98*coreBright})`);
+      core.addColorStop(.7, `hsla(${hue}, 90%, 65%, ${.25*coreBright})`);
+      core.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = core;
+      ctx.beginPath(); ctx.arc(cxc, cyc, coreR, 0, TAU); ctx.fill();
 
       if(currentMode === "protection" && visibility > 0.5){
         const shieldPulse = (t * 0.8) % 1;
         const shieldR = shieldPulse * Math.min(W,H) * 0.55;
         const shieldAlpha = (1 - shieldPulse) * 0.35 * visibility;
-        ctx.globalCompositeOperation="lighter";
+        ctx.globalCompositeOperation = "lighter";
         ctx.strokeStyle = `hsla(${hue}, 100%, 75%, ${shieldAlpha})`;
         ctx.lineWidth = 3 * D;
         ctx.beginPath(); ctx.arc(cxc, cyc, shieldR, 0, TAU); ctx.stroke();
       }
 
-      ctx.globalCompositeOperation="source-over";
+      ctx.globalCompositeOperation = "source-over";
     } catch(e){
       errEl.style.display = "block";
       errEl.textContent = "Hata: " + e.message;

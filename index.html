@@ -51,13 +51,14 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;background:#0
 #modes button[data-mode="danger"].on .danger-icon{ animation:spinDanger 2s linear infinite; }
 @keyframes spinDanger{ from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
 
-/* Idle: Sadece yavaşça büyüyüp küçülür (nefes alır), dönmez */
-@keyframes breatheIdle {
-  0% { transform: scale(1); filter: drop-shadow(0 0 6px rgba(80,200,255,.5)); }
-  50% { transform: scale(1.08); filter: drop-shadow(0 0 15px rgba(80,200,255,1)); }
-  100% { transform: scale(1); filter: drop-shadow(0 0 6px rgba(80,200,255,.5)); }
+/* Idle (Kara Delik): Akresyon diski hareketli görünsün diye çok yavaş döner */
+@keyframes spinIdle {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
 }
-#modes button[data-mode="idle"].on .idle-icon { animation: breatheIdle 4s ease-in-out infinite; }
+#modes button[data-mode="idle"].on .idle-icon {
+  animation: spinIdle 20s linear infinite; /* 20 saniyede bir tam tur: sakin, plazma akışı gibi */
+}
 
 #err{ position:fixed;bottom:6px;left:6px;color:#f66;font-size:11px;z-index:999; max-width:90vw;word-break:break-all;display:none; background:rgba(0,0,0,.7);padding:4px 8px;border-radius:6px; }
 </style>
@@ -66,8 +67,8 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;background:#0
 <canvas id="c"></canvas>
 
 <div id="modes" style="position:fixed;top:14px;right:14px;left:auto;bottom:auto;z-index:100;display:flex;flex-direction:row;flex-wrap:nowrap;gap:6px;white-space:nowrap;width:max-content;max-width:none;margin:0;padding:0;align-items:center;justify-content:flex-end;">
-  <!-- 1. IDLE (Kara Delik) -->
-  <button data-mode="Idle" class="on">
+  <!-- 1. IDLE (Kara Delik) - Dosya adı: Idle.png (Büyük I) -->
+  <button data-mode="idle" class="on">
     <img src="Idle.png" class="idle-icon" alt="Boşta">
   </button>
   <!-- 2. WORK (Dünya) -->

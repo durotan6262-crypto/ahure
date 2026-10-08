@@ -49,8 +49,7 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;background:#0
 .danger-icon{ filter:drop-shadow(0 0 8px rgba(255,80,80,.9)); }
 .idle-icon{ filter:drop-shadow(0 0 8px rgba(80,200,255,.7)); }
 .emergency-icon{
-  filter:drop-shadow(0 0 8px rgba(255,130,50,.9));
-  color:#ff8833;
+  filter:drop-shadow(0 0 6px rgba(255,230,0,.9));
 }
 .protection-icon{
   filter:drop-shadow(0 0 8px rgba(200,140,255,.9));
@@ -82,15 +81,6 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;background:#0
   animation: breatheIdle 4s ease-in-out infinite, plasmaShimmer 6s ease-in-out infinite;
 }
 
-/* EMERGENCY: Kalp atışı - iki kısa "lub-dub" nabzı */
-@keyframes heartPulse {
-  0%   { transform: scale(1); }
-  10%  { transform: scale(1.18); }
-  20%  { transform: scale(1); }
-  32%  { transform: scale(1.14); }
-  45%  { transform: scale(1); }
-  100% { transform: scale(1); }
-}
 #modes button[data-mode="emergency"].on .emergency-icon{
   animation: heartPulse 1.4s ease-in-out infinite;
 }
@@ -123,10 +113,47 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;background:#0
   <button data-mode="danger">
     <img src="danger.png" class="danger-icon" alt="Tehlike">
   </button>
-  <!-- 4. EMERGENCY (EKG / Kalp atışı) -->
+    <!-- 4. EMERGENCY (EKG + Uçan Mavi Nokta) -->
   <button data-mode="emergency">
-    <svg class="emergency-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M2 12 H6 L8 7 L11 17 L14 5 L17 12 H22"/>
+    <svg class="emergency-icon" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <defs>
+        <path id="ekgPath" d="M2 12 H6 L8 7 L11 17 L14 5 L17 12 H22"/>
+        <filter id="ekgGlow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="0.5" result="b"/>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <filter id="dotGlow" x="-200%" y="-200%" width="500%" height="500%">
+          <feGaussianBlur stdDeviation="1.4" result="b"/>
+          <feMerge>
+            <feMergeNode in="b"/>
+            <feMergeNode in="b"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+      </defs>
+
+      <!-- Soluk ince sarı hat (zemin) -->
+      <use href="#ekgPath" stroke="#ffcc00" stroke-width="0.8" opacity="0.35"/>
+
+      <!-- Parlak sarı hat: nokta ilerledikçe "çizilir" -->
+      <use href="#ekgPath" stroke="#fff700" stroke-width="1.3"
+           stroke-dasharray="45" stroke-dashoffset="45" filter="url(#ekgGlow)">
+        <animate attributeName="stroke-dashoffset" from="45" to="0"
+                 dur="2.4s" repeatCount="indefinite"/>
+      </use>
+
+      <!-- Mavi nokta: çizgiyi takip eder -->
+      <circle r="1.6" fill="#66f5ff" filter="url(#dotGlow)">
+        <animateMotion dur="2.4s" repeatCount="indefinite">
+          <mpath href="#ekgPath"/>
+        </animateMotion>
+      </circle>
+      <!-- Noktanın çekirdeği (beyaz, daha parlak) -->
+      <circle r="0.7" fill="#ffffff">
+        <animateMotion dur="2.4s" repeatCount="indefinite">
+          <mpath href="#ekgPath"/>
+        </animateMotion>
+      </circle>
     </svg>
   </button>
   <!-- 5. PROTECTION (Enerji Küresi) -->

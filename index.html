@@ -400,7 +400,7 @@ if('serviceWorker' in navigator){
   };
   const A = { hue:200, pulse:2.15, breathe:0.72, star:0, vib:0 };
 
-  let AC=null, mg=null, atmoStarted=false;
+  let AC=null, mg=null, atmoStarted=false, atmoInterval=null;
   function initA(){ try{ AC = new (window.AudioContext||window.webkitAudioContext)(); mg = AC.createGain(); mg.gain.value = 0; mg.connect(AC.destination); return true; }catch(e){ return false; } }
   function atmo(){
     if(!AC || atmoStarted) return; atmoStarted = true;
@@ -415,8 +415,29 @@ if('serviceWorker' in navigator){
     const sub = AC.createOscillator(); sub.type = "sine"; sub.frequency.value = 40;
     const subG = AC.createGain(); subG.gain.value = 0.08;
     ns.connect(lp).connect(bs).connect(sg).connect(mg); sub.connect(subG).connect(mg);
-    ns.start(now); sub.start(now);
-    mg.gain.setValueAtTime(0, now); mg.gain.linearRampToValueAtTime(0.30, now+0.15); mg.gain.linearRampToValueAtTime(0.0, now+6);
+        ns.start(now); sub.start(now);
+    // İlk açılış: yumuşak fade-in
+    mg.gain.setValueAtTime(0.001, now);
+    mg.gain.linearRampToValueAtTime(0.30, now + 1.5);
+    // Döngüyü başlat (14 saniyede bir: fade-in → kal → fade-out → sessizlik)
+    if(atmoInterval) clearInterval(atmoInterval);
+    atmoInterval = setInterval(atmoPulse, 14000);
+  }
+    function atmoPulse(){
+    if(!AC || !mg) return;
+    const now = AC.currentTime;
+    mg.gain.cancelScheduledValues(now);
+    if(currentMode !== 'idle'){
+      // Idle değilse sessiz
+      mg.gain.setValueAtTime(mg.gain.value, now);
+      mg.gain.linearRampToValueAtTime(0.001, now + 0.6);
+      return;
+    }
+    // Idle: 1.5s fade-in → 6s kal → 12s'e kadar fade-out → ~2s sessizlik
+    mg.gain.setValueAtTime(0.001, now);
+    mg.gain.linearRampToValueAtTime(0.28, now + 1.5);
+    mg.gain.linearRampToValueAtTime(0.28, now + 6.0);
+    mg.gain.linearRampToValueAtTime(0.001, now + 12.0);
   }
   function tryA(){ if(atmoStarted) return; if(!AC){ if(!initA()) return; } if(AC.state === "suspended") AC.resume().then(atmo).catch(()=>{}); else atmo(); }
   tryA(); setTimeout(tryA,100); setTimeout(tryA,500);
@@ -463,10 +484,12 @@ if('serviceWorker' in navigator){
 
   let currentMode = "idle";
   const modeButtons = document.querySelectorAll("#modes button");
-  function setMode(name){
+    function setMode(name){
     if(!MODES[name]) return;
     currentMode = name;
     modeButtons.forEach(b => b.classList.toggle("on", b.dataset.mode === name));
+    // Mod değişince sesi hemen ayarla
+    if(atmoStarted) atmoPulse();
   }
   modeButtons.forEach(b => {
     const handler = (e) => { e.preventDefault(); setMode(b.dataset.mode); };

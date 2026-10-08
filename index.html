@@ -57,20 +57,52 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;background:#0
 #modes button[data-mode="emergency"].on .ekg-layer{ display:none; }
 #modes button[data-mode="emergency"].on .spiral-layer{ display:block; }
   
-/* PROTECTION - Normal hal: yumuşak mor neon */
+/* PROTECTION - Normal hal: mavi neon, sabit yörüngeler */
 .protection-icon{
-  filter:drop-shadow(0 0 5px rgba(200,140,255,.7));
   transition: filter .4s ease;
 }
-/* PROTECTION - Aktif hal: parlak neon mor + tüm atom döner */
-#modes button[data-mode="protection"].on .protection-icon{
-  filter:drop-shadow(0 0 10px rgba(220,160,255,1))
-         drop-shadow(0 0 20px rgba(180,100,255,.85));
-  animation: spinProtection 12s linear infinite;
+.protection-icon .prot-orbit{
+  stroke: #4ddcff;
+  transition: stroke .4s ease;
 }
+.protection-icon .prot-electron{
+  fill: #ffffff;
+  stroke: #4ddcff;
+  transition: fill .4s ease, stroke .4s ease;
+}
+.protection-icon .prot-core{
+  stroke: #4ddcff;
+  transition: stroke .4s ease;
+}
+
+/* PROTECTION - Aktif hal: mor yörüngeler, mavi elektronlar, parlak çekirdek */
+#modes button[data-mode="protection"].on .protection-icon .prot-orbit{
+  stroke: #c88fff;
+  filter: drop-shadow(0 0 3px #c88fff);
+}
+#modes button[data-mode="protection"].on .protection-icon .prot-electron{
+  fill: #66f5ff;
+  stroke: #ffffff;
+  filter: drop-shadow(0 0 4px #66f5ff);
+}
+#modes button[data-mode="protection"].on .protection-icon .prot-core{
+  stroke: #e0aaff;
+  stroke-width: 1.1;
+  filter: drop-shadow(0 0 5px #e0aaff) drop-shadow(0 0 10px #c88fff);
+}
+#modes button[data-mode="protection"].on .protection-icon{
+  filter: drop-shadow(0 0 8px rgba(200,140,255,.9))
+         drop-shadow(0 0 16px rgba(120,200,255,.6));
+}
+
+/* Tüm atomu döndür (sadece aktifken) */
 @keyframes spinProtection {
   from { transform: rotate(0deg); }
   to   { transform: rotate(360deg); }
+}
+#modes button[data-mode="protection"].on .protection-icon .prot-atom{
+  animation: spinProtection 14s linear infinite;
+  transform-origin: 12px 12px;
 }
   
 
@@ -269,7 +301,7 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;background:#0
       </g>
     </svg>
   </button>
-    <!-- 5. PROTECTION (Atom) -->
+      <!-- 5. PROTECTION (Atom) -->
   <button data-mode="protection">
     <svg class="protection-icon" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
       <defs>
@@ -277,8 +309,8 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;background:#0
           <feGaussianBlur stdDeviation="0.5" result="b"/>
           <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
         </filter>
-        <filter id="protGlowStrong" x="-100%" y="-100%" width="300%" height="300%">
-          <feGaussianBlur stdDeviation="0.8" result="b"/>
+        <filter id="protGlowStrong" x="-150%" y="-150%" width="400%" height="400%">
+          <feGaussianBlur stdDeviation="1" result="b"/>
           <feMerge>
             <feMergeNode in="b"/>
             <feMergeNode in="b"/>
@@ -287,12 +319,13 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;background:#0
         </filter>
       </defs>
 
-      <g class="prot-orbits" filter="url(#protGlow)">
+      <!-- TÜM ATOM: aktif olunca döner -->
+      <g class="prot-atom">
         <!-- Yörünge 1: Yatay (0°) -->
         <g transform="rotate(0 12 12)">
-          <path d="M 3 12 A 9 4.5 0 1 1 21 12 A 9 4.5 0 1 1 3 12"
-                stroke="#c88fff" stroke-width="0.75" fill="none"/>
-          <circle r="1.05" fill="#ffffff" stroke="#c88fff" stroke-width="0.4">
+          <path class="prot-orbit" d="M 3 12 A 9 4.5 0 1 1 21 12 A 9 4.5 0 1 1 3 12"
+                stroke="#4ddcff" stroke-width="0.75" fill="none" filter="url(#protGlow)"/>
+          <circle class="prot-electron" r="1.05" fill="#ffffff" stroke="#4ddcff" stroke-width="0.4">
             <animateMotion dur="4s" repeatCount="indefinite"
                            path="M 3 12 A 9 4.5 0 1 1 21 12 A 9 4.5 0 1 1 3 12"/>
           </circle>
@@ -300,9 +333,9 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;background:#0
 
         <!-- Yörünge 2: +60° -->
         <g transform="rotate(60 12 12)">
-          <path d="M 3 12 A 9 4.5 0 1 1 21 12 A 9 4.5 0 1 1 3 12"
-                stroke="#c88fff" stroke-width="0.75" fill="none"/>
-          <circle r="1.05" fill="#ffffff" stroke="#c88fff" stroke-width="0.4">
+          <path class="prot-orbit" d="M 3 12 A 9 4.5 0 1 1 21 12 A 9 4.5 0 1 1 3 12"
+                stroke="#4ddcff" stroke-width="0.75" fill="none" filter="url(#protGlow)"/>
+          <circle class="prot-electron" r="1.05" fill="#ffffff" stroke="#4ddcff" stroke-width="0.4">
             <animateMotion dur="4s" repeatCount="indefinite" begin="1.3s"
                            path="M 3 12 A 9 4.5 0 1 1 21 12 A 9 4.5 0 1 1 3 12"/>
           </circle>
@@ -310,17 +343,18 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;background:#0
 
         <!-- Yörünge 3: -60° -->
         <g transform="rotate(-60 12 12)">
-          <path d="M 3 12 A 9 4.5 0 1 1 21 12 A 9 4.5 0 1 1 3 12"
-                stroke="#c88fff" stroke-width="0.75" fill="none"/>
-          <circle r="1.05" fill="#ffffff" stroke="#c88fff" stroke-width="0.4">
+          <path class="prot-orbit" d="M 3 12 A 9 4.5 0 1 1 21 12 A 9 4.5 0 1 1 3 12"
+                stroke="#4ddcff" stroke-width="0.75" fill="none" filter="url(#protGlow)"/>
+          <circle class="prot-electron" r="1.05" fill="#ffffff" stroke="#4ddcff" stroke-width="0.4">
             <animateMotion dur="4s" repeatCount="indefinite" begin="2.6s"
                            path="M 3 12 A 9 4.5 0 1 1 21 12 A 9 4.5 0 1 1 3 12"/>
           </circle>
         </g>
-      </g>
 
-      <!-- Merkez çekirdek -->
-      <circle cx="12" cy="12" r="2" stroke="#c88fff" stroke-width="0.8" fill="none"/>
+        <!-- Merkez çekirdek -->
+        <circle class="prot-core" cx="12" cy="12" r="2"
+                stroke="#4ddcff" stroke-width="0.9" fill="none" filter="url(#protGlow)"/>
+      </g>
     </svg>
   </button>
 </div>

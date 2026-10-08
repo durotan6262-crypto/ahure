@@ -113,15 +113,11 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;background:#0
   <button data-mode="danger">
     <img src="danger.png" class="danger-icon" alt="Tehlike">
   </button>
-      <!-- 4. EMERGENCY (EKG + Mavi Neon İz) -->
+        <!-- 4. EMERGENCY (Mavi Neon Nokta + İz) -->
   <button data-mode="emergency">
     <svg class="emergency-icon" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
       <defs>
         <path id="ekgPath" d="M2 12 H6 L8 7 L11 17 L14 5 L17 12 H22"/>
-        <filter id="ekgGlow" x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation="0.45" result="b"/>
-          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-        </filter>
         <filter id="dotGlow" x="-200%" y="-200%" width="500%" height="500%">
           <feGaussianBlur stdDeviation="1.3" result="b"/>
           <feMerge>
@@ -130,39 +126,49 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;background:#0
             <feMergeNode in="SourceGraphic"/>
           </feMerge>
         </filter>
+        <filter id="trailGlow" x="-200%" y="-200%" width="500%" height="500%">
+          <feGaussianBlur stdDeviation="0.6" result="b"/>
+          <feMerge>
+            <feMergeNode in="b"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
       </defs>
 
-      <!-- 1) STATİK PARLAK SARI EKG ÇİZGİSİ (tam hat) -->
-      <use href="#ekgPath" stroke="#ffe600" stroke-width="1.1" opacity="0.9" filter="url(#ekgGlow)"/>
-
-      <!-- 2) MAVİ NEON İZ (kayan pencere):
-           - dasharray: 12 birim mavi çizgi + 100 birim boşluk
-           - offset -12 → 12 arası kayar; pencere hep noktanın GERİSİNDE kalır
-           - 2.4sn'de nokta sona varır, iz yarıya kadar uçmuş olur (0-12 silinmiş) -->
-      <use href="#ekgPath" stroke="#4ddcff" stroke-width="2.2"
-           stroke-dasharray="12 100" stroke-dashoffset="-12" filter="url(#dotGlow)">
-        <animate attributeName="stroke-dashoffset"
-                 from="-12" to="12"
-                 dur="2.4s" repeatCount="indefinite"/>
+      <!-- KATMANLI MAVİ NEON İZ: Nokta ilerlerken arkasında kalır -->
+      <!-- Uzak kuyruk (soluk, uzun) -->
+      <use href="#ekgPath" stroke="#1a8cff" stroke-width="1.2" opacity="0.35"
+           stroke-dasharray="18 100" filter="url(#trailGlow)">
+        <animate attributeName="stroke-dashoffset" from="18" to="-26" dur="2.4s" repeatCount="indefinite"/>
+      </use>
+      <!-- Orta kuyruk -->
+      <use href="#ekgPath" stroke="#3db8ff" stroke-width="1.8" opacity="0.65"
+           stroke-dasharray="11 100" filter="url(#trailGlow)">
+        <animate attributeName="stroke-dashoffset" from="11" to="-33" dur="2.4s" repeatCount="indefinite"/>
+      </use>
+      <!-- Yakın kuyruk (parlak) -->
+      <use href="#ekgPath" stroke="#7fe4ff" stroke-width="2.3" opacity="1"
+           stroke-dasharray="5 100" filter="url(#trailGlow)">
+        <animate attributeName="stroke-dashoffset" from="5" to="-39" dur="2.4s" repeatCount="indefinite"/>
       </use>
 
-      <!-- 3) MAVİ NOKTA: pencerenin hep sonunda, fade in/out ile yeni nokta hissi -->
-      <circle r="1.7" fill="#66f5ff" filter="url(#dotGlow)">
+      <!-- MAVİ NOKTA: başta fade-in, sona varınca fade-out -->
+      <circle r="1.8" fill="#66f5ff" filter="url(#dotGlow)">
         <animateMotion dur="2.4s" repeatCount="indefinite">
           <mpath href="#ekgPath"/>
         </animateMotion>
         <animate attributeName="opacity"
-                 values="0;1;1;1;1;1;1;0"
-                 keyTimes="0;0.05;0.15;0.5;0.8;0.9;0.96;1"
+                 values="0;1;1;1;1;0"
+                 keyTimes="0;0.06;0.3;0.7;0.94;1"
                  dur="2.4s" repeatCount="indefinite"/>
       </circle>
-      <circle r="0.7" fill="#ffffff">
+      <circle r="0.8" fill="#ffffff">
         <animateMotion dur="2.4s" repeatCount="indefinite">
           <mpath href="#ekgPath"/>
         </animateMotion>
         <animate attributeName="opacity"
-                 values="0;1;1;1;1;1;1;0"
-                 keyTimes="0;0.05;0.15;0.5;0.8;0.9;0.96;1"
+                 values="0;1;1;1;1;0"
+                 keyTimes="0;0.06;0.3;0.7;0.94;1"
                  dur="2.4s" repeatCount="indefinite"/>
       </circle>
     </svg>

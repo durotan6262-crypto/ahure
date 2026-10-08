@@ -37,7 +37,6 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;background:#0
   object-fit:contain;display:block;
   border-radius:50%;pointer-events:none;
 }
-/* Idle ikonu daha büyük */
 #modes button[data-mode="idle"] img{
   width:38px;height:38px;
   max-width:38px;max-height:38px;
@@ -47,34 +46,62 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;background:#0
   pointer-events:none;display:block;
 }
 .world-icon{ filter:drop-shadow(0 0 8px rgba(80,200,255,.7)); }
-.danger-icon{ filter:drop-shadow(0 0 8px rgba(255,80,80,.9)); color:#ff4444; }
+.danger-icon{ filter:drop-shadow(0 0 8px rgba(255,80,80,.9)); }
 .idle-icon{ filter:drop-shadow(0 0 8px rgba(80,200,255,.7)); }
+.emergency-icon{
+  filter:drop-shadow(0 0 8px rgba(255,130,50,.9));
+  color:#ff8833;
+}
+.protection-icon{
+  filter:drop-shadow(0 0 8px rgba(200,140,255,.9));
+  color:#c88fff;
+}
 
+/* WORK: Dünya döner */
 #modes button[data-mode="work"].on .world-icon{ animation:spin 6s linear infinite; }
 @keyframes spin{ from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
 
-#modes button[data-mode="danger"].on .danger-icon{ animation:spinDanger 2s linear infinite; }
+/* DANGER: resim döner */
+#modes button[data-mode="danger"].on .danger-icon{ animation:spinDanger 3s linear infinite; }
 @keyframes spinDanger{ from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
 
-/* IDLE (Kara Delik):
-   - Dönmez
-   - Hafif nefes alır (büyüyüp küçülür)
-   - Plazma akışı hissi için renk tonu ve parlaklık titreşir
-*/
+/* IDLE: Nefes + plazma titreşimi */
 @keyframes breatheIdle {
   0%   { transform: scale(1); }
   50%  { transform: scale(1.06); }
   100% { transform: scale(1); }
 }
 @keyframes plasmaShimmer {
-  0%   { filter: drop-shadow(0 0 6px rgba(80,200,255,.6)) hue-rotate(0deg)   saturate(1.0)  brightness(1.00); }
+  0%   { filter: drop-shadow(0 0 6px rgba(80,200,255,.6)) hue-rotate(0deg)    saturate(1.00) brightness(1.00); }
   25%  { filter: drop-shadow(0 0 12px rgba(80,200,255,.9)) hue-rotate(-15deg) saturate(1.25) brightness(1.15); }
   50%  { filter: drop-shadow(0 0 16px rgba(120,220,255,1)) hue-rotate(-25deg) saturate(1.35) brightness(1.22); }
   75%  { filter: drop-shadow(0 0 12px rgba(80,200,255,.9)) hue-rotate(-10deg) saturate(1.20) brightness(1.10); }
-  100% { filter: drop-shadow(0 0 6px rgba(80,200,255,.6)) hue-rotate(0deg)   saturate(1.0)  brightness(1.00); }
+  100% { filter: drop-shadow(0 0 6px rgba(80,200,255,.6)) hue-rotate(0deg)    saturate(1.00) brightness(1.00); }
 }
 #modes button[data-mode="idle"].on .idle-icon{
   animation: breatheIdle 4s ease-in-out infinite, plasmaShimmer 6s ease-in-out infinite;
+}
+
+/* EMERGENCY: Kalp atışı - iki kısa "lub-dub" nabzı */
+@keyframes heartPulse {
+  0%   { transform: scale(1); }
+  10%  { transform: scale(1.18); }
+  20%  { transform: scale(1); }
+  32%  { transform: scale(1.14); }
+  45%  { transform: scale(1); }
+  100% { transform: scale(1); }
+}
+#modes button[data-mode="emergency"].on .emergency-icon{
+  animation: heartPulse 1.4s ease-in-out infinite;
+}
+
+/* PROTECTION: Enerji küresi halkaları döner */
+@keyframes spinProtection {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+#modes button[data-mode="protection"].on .protection-icon{
+  animation: spinProtection 10s linear infinite;
 }
 
 #err{ position:fixed;bottom:6px;left:6px;color:#f66;font-size:11px;z-index:999; max-width:90vw;word-break:break-all;display:none; background:rgba(0,0,0,.7);padding:4px 8px;border-radius:6px; }
@@ -92,14 +119,24 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;background:#0
   <button data-mode="work">
     <img src="world.png" class="world-icon" alt="Çalışma">
   </button>
-    <!-- 3. DANGER (danger.png) -->
+  <!-- 3. DANGER (danger.png) -->
   <button data-mode="danger">
     <img src="danger.png" class="danger-icon" alt="Tehlike">
   </button>
-  <!-- 4. EMERGENCY (Şimşek) -->
-  <button data-mode="emergency">⚡</button>
-  <!-- 5. PROTECTION (Kalkan) -->
-  <button data-mode="protection">🛡</button>
+  <!-- 4. EMERGENCY (EKG / Kalp atışı) -->
+  <button data-mode="emergency">
+    <svg class="emergency-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M2 12 H6 L8 7 L11 17 L14 5 L17 12 H22"/>
+    </svg>
+  </button>
+  <!-- 5. PROTECTION (Enerji Küresi) -->
+  <button data-mode="protection">
+    <svg class="protection-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+      <circle cx="12" cy="12" r="4.2" fill="none"/>
+      <ellipse cx="12" cy="12" rx="10.5" ry="3.3" transform="rotate(30 12 12)"/>
+      <ellipse cx="12" cy="12" rx="10.5" ry="3.3" transform="rotate(-30 12 12)"/>
+    </svg>
+  </button>
 </div>
 
 <div id="err"></div>

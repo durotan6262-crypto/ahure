@@ -49,7 +49,7 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;background:#0
 .danger-icon{ filter:drop-shadow(0 0 8px rgba(255,80,80,.9)); }
 .idle-icon{ filter:drop-shadow(0 0 8px rgba(80,200,255,.7)); }
 .emergency-icon{
-  filter:drop-shadow(0 0 6px rgba(255,230,0,.9));
+  filter:drop-shadow(0 0 6px rgba(80,200,255,.85));
 }
 .protection-icon{
   filter:drop-shadow(0 0 8px rgba(200,140,255,.9));
@@ -113,63 +113,97 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;background:#0
   <button data-mode="danger">
     <img src="danger.png" class="danger-icon" alt="Tehlike">
   </button>
-        <!-- 4. EMERGENCY (Mavi Neon Nokta + İz) -->
+          <!-- 4. EMERGENCY (Spiral + Patlama) -->
   <button data-mode="emergency">
     <svg class="emergency-icon" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
       <defs>
-        <path id="ekgPath" d="M2 12 H6 L8 7 L11 17 L14 5 L17 12 H22"/>
-        <filter id="dotGlow" x="-200%" y="-200%" width="500%" height="500%">
-          <feGaussianBlur stdDeviation="1.3" result="b"/>
-          <feMerge>
-            <feMergeNode in="b"/>
-            <feMergeNode in="b"/>
-            <feMergeNode in="SourceGraphic"/>
-          </feMerge>
+        <path id="spiralPath" pathLength="100"
+              d="M 22 12 L 16.79 20.30 L 7.42 19.94 L 3.25 12 L 7.83 4.78 L 15.96 5.14 L 19.5 12 L 15.54 18.13 L 8.67 17.78 L 5.75 12 L 9.08 6.95 L 14.71 7.31 L 17 12 L 14.29 15.97 L 9.92 15.61 L 8.25 12 L 10.33 9.11 L 13.46 9.47 L 14.5 12 L 13.04 13.80 L 11.17 13.44 L 10.75 12 L 11.58 11.28 L 12.21 11.64 L 12 12"/>
+        <filter id="spiralGlow" x="-200%" y="-200%" width="500%" height="500%">
+          <feGaussianBlur stdDeviation="0.55" result="b"/>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
         </filter>
-        <filter id="trailGlow" x="-200%" y="-200%" width="500%" height="500%">
-          <feGaussianBlur stdDeviation="0.6" result="b"/>
+        <filter id="dotGlow2" x="-300%" y="-300%" width="700%" height="700%">
+          <feGaussianBlur stdDeviation="1.2" result="b"/>
           <feMerge>
+            <feMergeNode in="b"/>
             <feMergeNode in="b"/>
             <feMergeNode in="SourceGraphic"/>
           </feMerge>
         </filter>
       </defs>
 
-      <!-- KATMANLI MAVİ NEON İZ: Nokta ilerlerken arkasında kalır -->
-      <!-- Uzak kuyruk (soluk, uzun) -->
-      <use href="#ekgPath" stroke="#1a8cff" stroke-width="1.2" opacity="0.35"
-           stroke-dasharray="18 100" filter="url(#trailGlow)">
-        <animate attributeName="stroke-dashoffset" from="18" to="-26" dur="2.4s" repeatCount="indefinite"/>
+      <!-- Zayıf arka plan spirali (sabit, soluk) -->
+      <use href="#spiralPath" stroke="#0a3a5a" stroke-width="0.7" opacity="0.45"/>
+
+      <!-- MAVİ NEON İZ: nokta ilerledikçe çizilir (3 katman) -->
+      <use href="#spiralPath" stroke="#1a6aff" stroke-width="3" opacity="0.45"
+           stroke-dasharray="100 100" stroke-dashoffset="100" filter="url(#spiralGlow)">
+        <animate attributeName="stroke-dashoffset" from="100" to="0" dur="2.5s" repeatCount="indefinite"/>
       </use>
-      <!-- Orta kuyruk -->
-      <use href="#ekgPath" stroke="#3db8ff" stroke-width="1.8" opacity="0.65"
-           stroke-dasharray="11 100" filter="url(#trailGlow)">
-        <animate attributeName="stroke-dashoffset" from="11" to="-33" dur="2.4s" repeatCount="indefinite"/>
+      <use href="#spiralPath" stroke="#3db8ff" stroke-width="1.8" opacity="0.9"
+           stroke-dasharray="100 100" stroke-dashoffset="100" filter="url(#spiralGlow)">
+        <animate attributeName="stroke-dashoffset" from="100" to="0" dur="2.5s" repeatCount="indefinite"/>
       </use>
-      <!-- Yakın kuyruk (parlak) -->
-      <use href="#ekgPath" stroke="#7fe4ff" stroke-width="2.3" opacity="1"
-           stroke-dasharray="5 100" filter="url(#trailGlow)">
-        <animate attributeName="stroke-dashoffset" from="5" to="-39" dur="2.4s" repeatCount="indefinite"/>
+      <use href="#spiralPath" stroke="#cceeff" stroke-width="0.6"
+           stroke-dasharray="100 100" stroke-dashoffset="100">
+        <animate attributeName="stroke-dashoffset" from="100" to="0" dur="2.5s" repeatCount="indefinite"/>
       </use>
 
-      <!-- MAVİ NOKTA: başta fade-in, sona varınca fade-out -->
-      <circle r="1.8" fill="#66f5ff" filter="url(#dotGlow)">
-        <animateMotion dur="2.4s" repeatCount="indefinite">
-          <mpath href="#ekgPath"/>
+      <!-- MAVİ NOKTA: spiral üzerinde dıştan içe ilerler, merkezde sarıya döner -->
+      <circle r="1.7" fill="#66f5ff" filter="url(#dotGlow2)">
+        <animateMotion dur="2.5s" repeatCount="indefinite">
+          <mpath href="#spiralPath"/>
         </animateMotion>
+        <animate attributeName="fill"
+                 values="#66f5ff;#66f5ff;#66f5ff;#ffea00;#ffffff"
+                 keyTimes="0;0.5;0.78;0.9;1"
+                 dur="2.5s" repeatCount="indefinite"/>
+        <animate attributeName="r"
+                 values="1.7;1.7;1.7;2.6;0"
+                 keyTimes="0;0.5;0.78;0.9;1"
+                 dur="2.5s" repeatCount="indefinite"/>
         <animate attributeName="opacity"
                  values="0;1;1;1;1;0"
-                 keyTimes="0;0.06;0.3;0.7;0.94;1"
-                 dur="2.4s" repeatCount="indefinite"/>
+                 keyTimes="0;0.05;0.5;0.8;0.97;1"
+                 dur="2.5s" repeatCount="indefinite"/>
       </circle>
-      <circle r="0.8" fill="#ffffff">
-        <animateMotion dur="2.4s" repeatCount="indefinite">
-          <mpath href="#ekgPath"/>
+      <circle r="0.7" fill="#ffffff">
+        <animateMotion dur="2.5s" repeatCount="indefinite">
+          <mpath href="#spiralPath"/>
         </animateMotion>
         <animate attributeName="opacity"
-                 values="0;1;1;1;1;0"
-                 keyTimes="0;0.06;0.3;0.7;0.94;1"
-                 dur="2.4s" repeatCount="indefinite"/>
+                 values="0;1;1;1;0"
+                 keyTimes="0;0.05;0.78;0.88;1"
+                 dur="2.5s" repeatCount="indefinite"/>
+      </circle>
+
+      <!-- PATLAMA HALKASI: merkezde beliren sarı genişleyen halka -->
+      <circle cx="12" cy="12" r="0" fill="none" stroke="#ffe600" stroke-width="0.8" opacity="0">
+        <animate attributeName="r"
+                 values="0;0;0;0;5.5;8"
+                 keyTimes="0;0.78;0.88;0.92;0.96;1"
+                 dur="2.5s" repeatCount="indefinite"/>
+        <animate attributeName="opacity"
+                 values="0;0;0;0;0.95;0"
+                 keyTimes="0;0.78;0.88;0.92;0.97;1"
+                 dur="2.5s" repeatCount="indefinite"/>
+        <animate attributeName="stroke-width"
+                 values="0.8;0.8;0.8;0.8;1.6;0.2"
+                 keyTimes="0;0.78;0.88;0.92;0.97;1"
+                 dur="2.5s" repeatCount="indefinite"/>
+      </circle>
+
+      <!-- MERKEZ PARLAMASI: sarı flaş -->
+      <circle cx="12" cy="12" r="0" fill="#ffe600" filter="url(#dotGlow2)">
+        <animate attributeName="r"
+                 values="0;0;0;0;2.8;0"
+                 keyTimes="0;0.78;0.88;0.92;0.97;1"
+                 dur="2.5s" repeatCount="indefinite"/>
+        <animate attributeName="opacity"
+                 values="0;0;0;0;1;0"
+                 keyTimes="0;0.78;0.88;0.92;0.97;1"
+                 dur="2.5s" repeatCount="indefinite"/>
       </circle>
     </svg>
   </button>

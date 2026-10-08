@@ -18,7 +18,7 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;background:#0
   width:44px;min-width:44px;max-width:44px;
   height:44px;min-height:44px;max-height:44px;
   flex:0 0 44px;flex-shrink:0;flex-grow:0;
-  padding:4px;font-size:18px;border-radius:50%;
+  padding:2px;font-size:18px;border-radius:50%;
   background:rgba(0,20,40,.5);
   border:1px solid rgba(80,200,255,.35);
   color:#fff;cursor:pointer;
@@ -37,6 +37,11 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;background:#0
   object-fit:contain;display:block;
   border-radius:50%;pointer-events:none;
 }
+/* Idle ikonu daha büyük */
+#modes button[data-mode="idle"] img{
+  width:38px;height:38px;
+  max-width:38px;max-height:38px;
+}
 #modes button svg{
   width:26px;height:26px;
   pointer-events:none;display:block;
@@ -51,13 +56,25 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;background:#0
 #modes button[data-mode="danger"].on .danger-icon{ animation:spinDanger 2s linear infinite; }
 @keyframes spinDanger{ from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
 
-/* Idle (Kara Delik): Akresyon diski hareketli görünsün diye çok yavaş döner */
-@keyframes spinIdle {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
+/* IDLE (Kara Delik):
+   - Dönmez
+   - Hafif nefes alır (büyüyüp küçülür)
+   - Plazma akışı hissi için renk tonu ve parlaklık titreşir
+*/
+@keyframes breatheIdle {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.06); }
+  100% { transform: scale(1); }
 }
-#modes button[data-mode="idle"].on .idle-icon {
-  animation: spinIdle 20s linear infinite; /* 20 saniyede bir tam tur: sakin, plazma akışı gibi */
+@keyframes plasmaShimmer {
+  0%   { filter: drop-shadow(0 0 6px rgba(80,200,255,.6)) hue-rotate(0deg)   saturate(1.0)  brightness(1.00); }
+  25%  { filter: drop-shadow(0 0 12px rgba(80,200,255,.9)) hue-rotate(-15deg) saturate(1.25) brightness(1.15); }
+  50%  { filter: drop-shadow(0 0 16px rgba(120,220,255,1)) hue-rotate(-25deg) saturate(1.35) brightness(1.22); }
+  75%  { filter: drop-shadow(0 0 12px rgba(80,200,255,.9)) hue-rotate(-10deg) saturate(1.20) brightness(1.10); }
+  100% { filter: drop-shadow(0 0 6px rgba(80,200,255,.6)) hue-rotate(0deg)   saturate(1.0)  brightness(1.00); }
+}
+#modes button[data-mode="idle"].on .idle-icon{
+  animation: breatheIdle 4s ease-in-out infinite, plasmaShimmer 6s ease-in-out infinite;
 }
 
 #err{ position:fixed;bottom:6px;left:6px;color:#f66;font-size:11px;z-index:999; max-width:90vw;word-break:break-all;display:none; background:rgba(0,0,0,.7);padding:4px 8px;border-radius:6px; }
@@ -67,7 +84,7 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;background:#0
 <canvas id="c"></canvas>
 
 <div id="modes" style="position:fixed;top:14px;right:14px;left:auto;bottom:auto;z-index:100;display:flex;flex-direction:row;flex-wrap:nowrap;gap:6px;white-space:nowrap;width:max-content;max-width:none;margin:0;padding:0;align-items:center;justify-content:flex-end;">
-  <!-- 1. IDLE (Kara Delik) - Dosya adı: Idle.png (Büyük I) -->
+  <!-- 1. IDLE (Kara Delik) -->
   <button data-mode="idle" class="on">
     <img src="Idle.png" class="idle-icon" alt="Boşta">
   </button>

@@ -57,9 +57,20 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;background:#0
 #modes button[data-mode="emergency"].on .ekg-layer{ display:none; }
 #modes button[data-mode="emergency"].on .spiral-layer{ display:block; }
   
+/* PROTECTION - Normal hal: yumuşak mor neon */
 .protection-icon{
-  filter:drop-shadow(0 0 8px rgba(200,140,255,.9));
-  color:#c88fff;
+  filter:drop-shadow(0 0 5px rgba(200,140,255,.7));
+  transition: filter .4s ease;
+}
+/* PROTECTION - Aktif hal: parlak neon mor + tüm atom döner */
+#modes button[data-mode="protection"].on .protection-icon{
+  filter:drop-shadow(0 0 10px rgba(220,160,255,1))
+         drop-shadow(0 0 20px rgba(180,100,255,.85));
+  animation: spinProtection 12s linear infinite;
+}
+@keyframes spinProtection {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
 }
   
 
@@ -258,12 +269,58 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;background:#0
       </g>
     </svg>
   </button>
-  <!-- 5. PROTECTION (Enerji Küresi) -->
+    <!-- 5. PROTECTION (Atom) -->
   <button data-mode="protection">
-    <svg class="protection-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
-      <circle cx="12" cy="12" r="4.2" fill="none"/>
-      <ellipse cx="12" cy="12" rx="10.5" ry="3.3" transform="rotate(30 12 12)"/>
-      <ellipse cx="12" cy="12" rx="10.5" ry="3.3" transform="rotate(-30 12 12)"/>
+    <svg class="protection-icon" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <defs>
+        <filter id="protGlow" x="-100%" y="-100%" width="300%" height="300%">
+          <feGaussianBlur stdDeviation="0.5" result="b"/>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <filter id="protGlowStrong" x="-100%" y="-100%" width="300%" height="300%">
+          <feGaussianBlur stdDeviation="0.8" result="b"/>
+          <feMerge>
+            <feMergeNode in="b"/>
+            <feMergeNode in="b"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+      </defs>
+
+      <g class="prot-orbits" filter="url(#protGlow)">
+        <!-- Yörünge 1: Yatay (0°) -->
+        <g transform="rotate(0 12 12)">
+          <path d="M 3 12 A 9 4.5 0 1 1 21 12 A 9 4.5 0 1 1 3 12"
+                stroke="#c88fff" stroke-width="0.75" fill="none"/>
+          <circle r="1.05" fill="#ffffff" stroke="#c88fff" stroke-width="0.4">
+            <animateMotion dur="4s" repeatCount="indefinite"
+                           path="M 3 12 A 9 4.5 0 1 1 21 12 A 9 4.5 0 1 1 3 12"/>
+          </circle>
+        </g>
+
+        <!-- Yörünge 2: +60° -->
+        <g transform="rotate(60 12 12)">
+          <path d="M 3 12 A 9 4.5 0 1 1 21 12 A 9 4.5 0 1 1 3 12"
+                stroke="#c88fff" stroke-width="0.75" fill="none"/>
+          <circle r="1.05" fill="#ffffff" stroke="#c88fff" stroke-width="0.4">
+            <animateMotion dur="4s" repeatCount="indefinite" begin="1.3s"
+                           path="M 3 12 A 9 4.5 0 1 1 21 12 A 9 4.5 0 1 1 3 12"/>
+          </circle>
+        </g>
+
+        <!-- Yörünge 3: -60° -->
+        <g transform="rotate(-60 12 12)">
+          <path d="M 3 12 A 9 4.5 0 1 1 21 12 A 9 4.5 0 1 1 3 12"
+                stroke="#c88fff" stroke-width="0.75" fill="none"/>
+          <circle r="1.05" fill="#ffffff" stroke="#c88fff" stroke-width="0.4">
+            <animateMotion dur="4s" repeatCount="indefinite" begin="2.6s"
+                           path="M 3 12 A 9 4.5 0 1 1 21 12 A 9 4.5 0 1 1 3 12"/>
+          </circle>
+        </g>
+      </g>
+
+      <!-- Merkez çekirdek -->
+      <circle cx="12" cy="12" r="2" stroke="#c88fff" stroke-width="0.8" fill="none"/>
     </svg>
   </button>
 </div>

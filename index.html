@@ -344,7 +344,7 @@ if('serviceWorker' in navigator){
   const A = { hue:200, pulse:2.15, breathe:0.72, star:0, vib:0 };
   let workPlanets = [];
   let workNextSpawn = 0;
-  let currentFlareAngle = 0;
+  let currentFlareAngles = [0, Math.PI];
 
   let AC=null, mg=null, atmoStarted=false, atmoInterval=null;
   function initA(){
@@ -655,57 +655,72 @@ if('serviceWorker' in navigator){
       const flareWidth = W * scaleFactor;
       const halfFlare = flareWidth / 2;
 
-      // Tek flare — hedef açı ve yoğunluk
-      let targetFlareAngle = currentFlareAngle;
-      let flareIntensity = 0.35;
+      // İki uç — bağımsız hedef açı ve yoğunluk
+      const targetAngles = [currentFlareAngles[0], currentFlareAngles[1]];
+      const flareIntensity = [0.35, 0.35];
 
-      if(currentMode === 'work' && workPlanets.length > 0){
-        if(workPlanets.length === 1){
-          // Tek gezegen: direkt ona bak
-          targetFlareAngle = Math.atan2(workPlanets[0].y - cyc, workPlanets[0].x - cxc);
-        } else {
-          // İki gezegen: açısal ortalama (kısa yol)
-          const a0 = Math.atan2(workPlanets[0].y - cyc, workPlanets[0].x - cxc);
-          const a1 = Math.atan2(workPlanets[1].y - cyc, workPlanets[1].x - cxc);
-          let diff = a1 - a0;
-          while(diff > Math.PI) diff -= TAU;
-          while(diff < -Math.PI) diff += TAU;
-          // Ortalama + 90° → flare ekseni iki gezegenin ortasına dik; uçlar onlara denk gelir
-          targetFlareAngle = a0 + diff / 2 + Math.PI / 2;
+      if(currentMode === 'work'){
+        // Her uç kendi gezegenini hedeflesin
+        for(let f = 0; f < 2; f++){
+          if(workPlanets[f]){
+            targetAngles[f] = Math.atan2(workPlanets[f].y - cyc, workPlanets[f].x - cxc);
+            flareIntensity[f] = 1.0;
+          } else {
+            // Gezegen yok: yavaş radar taraması (uçlar zıt yönlerde döner)
+            targetAngles[f] = currentFlareAngles[f] + (f === 0 ? 0.006 : -0.005) * dt;
+            flareIntensity[f] = 0.35;
+          }
         }
-        flareIntensity = 1.0;
-      } else if(currentMode === 'work'){
-        // Gezegen yok: yavaş radar taraması
-        targetFlareAngle = currentFlareAngle + 0.006 * dt;
       } else {
-        // Diğer modlarda flare yatay sabit kalır
-        targetFlareAngle = 0;
+        // Work dışı modlarda klasik yatay flare
+        targetAngles[0] = 0;
+        targetAngles[1] = Math.PI;
       }
 
-      let dAng = targetFlareAngle - currentFlareAngle;
-      while(dAng > Math.PI) dAng -= TAU;
-      while(dAng < -Math.PI) dAng += TAU;
-      currentFlareAngle += dAng * 0.10 * dt;
+      // Her uç için yumuşak açı takibi
+      for(let f = 0; f < 2; f++){
+        let dAng = targetAngles[f] - currentFlareAngles[f];
+        while(dAng > Math.PI) dAng -= TAU;
+        while(dAng < -Math.PI) dAng += TAU;
+        currentFlareAngles[f] += dAng * 0.10 * dt;
+      }
 
-      const finalFa = fa * flareIntensity;
-      gx.save();
-      gx.translate(cxc, cyc);
-      gx.rotate(currentFlareAngle);
-      const lg = gx.createLinearGradient(-halfFlare, 0, halfFlare, 0);
-      lg.addColorStop(0, `hsla(${hue},90%,40%,0)`);
-      lg.addColorStop(.18, `hsla(${hue},100%,55%,${finalFa*.06})`);
-      lg.addColorStop(.40, `hsla(${hue},100%,65%,${finalFa*.16})`);
-      lg.addColorStop(.495, `hsla(${hue},80%,80%,${finalFa*.58})`);
-      lg.addColorStop(.5, `rgba(235,255,255,${finalFa})`);
-      lg.addColorStop(.505, `hsla(${hue},80%,80%,${finalFa*.58})`);
-      lg.addColorStop(.60, `hsla(${hue},100%,65%,${finalFa*.16})`);
-      lg.addColorStop(.82, `hsla(${hue},100%,55%,${finalFa*.06})`);
-      lg.addColorStop(1, `hsla(${hue},90%,40%,0)`);
-      gx.fillStyle = lg;
-      gx.fillRect(-halfFlare, -.8, flareWidth, 1.6);
-      gx.fillStyle = `hsla(${hue}, 90%, 70%, ${finalFa*.10})`;
-      gx.fillRect(-scale*1.35, -.35, scale*2.7, .7);
-      gx.restore();
+      // Her ucu merkezden dışa ayrı çiz
+      for(let f = 0; f < 2; f++){
+        const finalFa = fa * flareIntensity[f];
+        const ang = currentFlareAngles[f];
+        const ex = Math.cos(ang) * halfFlare;
+        const ey = Math.sin(ang) * halfFlare;
+
+        gx.save();
+        gx.translate(cxc, cyc);
+
+        // Işının gövdesi (merkezden uca doğru solan gradient)
+        const lg = gx.createLinearGradient(0, 0, ex, ey);
+        lg.addColorStop(0,    `rgba(235,255,255,${finalFa})`);
+        lg.addColorStop(0.05, `hsla(${hue},80%,80%,${finalFa*.58})`);
+        lg.addColorStop(0.20, `hsla(${hue},100%,65%,${finalFa*.16})`);
+        lg.addColorStop(0.55, `hsla(${hue},100%,55%,${finalFa*.06})`);
+        lg.addColorStop(1,    `hsla(${hue},90%,40%,0)`);
+
+        gx.strokeStyle = lg;
+        gx.lineWidth = 1.6;
+        gx.lineCap = "round";
+        gx.beginPath();
+        gx.moveTo(0, 0);
+        gx.lineTo(ex, ey);
+        gx.stroke();
+
+        // Ek ince glow (yakın kısım)
+        gx.strokeStyle = `hsla(${hue}, 90%, 70%, ${finalFa*.10})`;
+        gx.lineWidth = 3;
+        gx.beginPath();
+        gx.moveTo(0, 0);
+        gx.lineTo(ex * 0.45, ey * 0.45);
+        gx.stroke();
+
+        gx.restore();
+      }
       ctx.globalCompositeOperation = "lighter";
       ctx.drawImage(glow, 0, 0, W, H);
 

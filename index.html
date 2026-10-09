@@ -334,6 +334,15 @@ if('serviceWorker' in navigator){
   const introStart = performance.now();
   const INTRO_DURATION = 6000;
 
+  const PLANET_TYPES = [
+    { id:'rocky',    label:'Kayalık',  h:25,  sizeMul:1.0,  ring:false, bands:false, spots:7 },
+    { id:'gas',      label:'Gaz Devi', h:35,  sizeMul:1.55, ring:true,  bands:true,  spots:0 },
+    { id:'ice',      label:'Buz',      h:195, sizeMul:1.0,  ring:false, bands:false, spots:5 },
+    { id:'volcanic', label:'Volkanik', h:8,   sizeMul:0.9,  ring:false, bands:false, spots:6 },
+    { id:'ocean',    label:'Okyanus',  h:210, sizeMul:1.1,  ring:false, bands:false, spots:4 },
+  ];
+  let planetIdCounter = 1;
+
   const MODES = {
     idle:       { hueCycle:0, hue:200, hueSpeed:0,  pulse:2.15, breathe:0.72, star:0,  vib:0 },
     work:       { hueCycle:1, hue:200, hueSpeed:55, pulse:2.6,  breathe:1.05, star:0, vib:0 },
@@ -744,7 +753,7 @@ if('serviceWorker' in navigator){
       ctx.fillStyle = core;
       ctx.beginPath(); ctx.arc(cxc, cyc, coreR, 0, TAU); ctx.fill();
       
-                        // WORK: İki gezegen + absorbsiyon + çarpışma
+                              // WORK: Gezegen inceleme (türler + veri kartı + progress bar)
       if(currentMode === 'work' && visibility > 0.5){
         // Yeni gezegen doğur
         if(workPlanets.length < 2 && t > workNextSpawn){
@@ -765,25 +774,39 @@ if('serviceWorker' in navigator){
             }
             angle = best;
           }
+          const type = PLANET_TYPES[Math.floor(Math.random() * PLANET_TYPES.length)];
           const dist = Math.min(W,H) * (0.30 + Math.random() * 0.18);
-          const pr = Math.min(W,H) * (0.030 + Math.random() * 0.016);
+          const pr = Math.min(W,H) * (0.030 + Math.random() * 0.016) * type.sizeMul;
           workPlanets.push({
+            id: planetIdCounter++,
             x: cxc + Math.cos(angle) * dist,
             y: cyc + Math.sin(angle) * dist * 0.85,
             r: pr,
             born: t,
-            life: 5.5 + Math.random() * 2.5,
+            life: 9 + Math.random() * 3,
+            readProg: 0,
             spawnAngle: angle,
-            spots: Array.from({length: 5 + Math.floor(Math.random()*4)}, () => ({
+            type: type,
+            data: {
+              mass: (0.5 + Math.random() * 4.5).toFixed(1),
+              temp: Math.round(-150 + Math.random() * 350),
+              mag:  (0.1 + Math.random() * 2.9).toFixed(1),
+            },
+            spots: type.spots ? Array.from({length: type.spots}, () => ({
               ax: (Math.random()-0.5) * 1.6,
               ay: (Math.random()-0.5) * 1.6,
               size: 0.12 + Math.random() * 0.22
-            }))
+            })) : [],
+            bands: type.bands ? Array.from({length: 6}, (_,i) => ({
+              off: -0.75 + i * 0.30 + (Math.random()-0.5)*0.08,
+              thick: 0.07 + Math.random()*0.09,
+              alpha: 0.15 + Math.random()*0.20
+            })) : [],
           });
           workNextSpawn = t + 0.6;
         }
 
-        // Çarpışma kontrolü (iki gezegen yaklaşırsa)
+        // Çarpışma kontrolü
         if(workPlanets.length === 2){
           const p0 = workPlanets[0], p1 = workPlanets[1];
           const dx = p1.x - p0.x, dy = p1.y - p0.y;
@@ -802,7 +825,21 @@ if('serviceWorker' in navigator){
           }
         }
 
-        // Absorbsiyon: yaşamın son %25'inde parçacık çek
+        // Flare hedeflemesini ölç, readProg'u güncelle
+        for(const planet of workPlanets){
+          const planetAngle = Math.atan2(planet.y - cyc, planet.x - cxc);
+          let isAimed = false;
+          for(const fa of currentFlareAngles){
+            let dA = planetAngle - fa;
+            while(dA > Math.PI) dA -= TAU;
+            while(dA < -Math.PI) dA += TAU;
+            if(Math.abs(dA) < 0.30){ isAimed = true; break; }
+          }
+          planet._aimed = isAimed;
+          planet.readProg += dt * (isAimed ? 0.030 : 0.005);
+        }
+
+        // Absorbsiyon parçacıklarını doğur (son %25'te)
         for(const planet of workPlanets){
           const age = t - planet.born;
           if(age > planet.life * 0.75 && Math.random() < 0.5){
@@ -819,9 +856,10 @@ if('serviceWorker' in navigator){
           }
         }
 
-        // Ölen gezegenleri çıkar
+        // Ölen gezegenleri çıkar (readProg dolduysa veya yaş bittiyse)
         for(let i = workPlanets.length - 1; i >= 0; i--){
-          if((t - workPlanets[i].born) >= workPlanets[i].life){
+          const p = workPlanets[i];
+          if(p.readProg >= 1 || (t - p.born) >= p.life){
             workPlanets.splice(i, 1);
             if(workNextSpawn < t) workNextSpawn = t + 0.5;
           }
@@ -836,58 +874,161 @@ if('serviceWorker' in navigator){
           lifeAlpha = Math.max(0, Math.min(1, lifeAlpha));
 
           const px = planet.x, py = planet.y, pr = planet.r;
+          const type = planet.type;
+          const pHue = type.h;
           const dxc = cxc - px, dyc = cyc - py;
           const distC = Math.sqrt(dxc*dxc + dyc*dyc) || 1;
           const nx = dxc / distC, ny = dyc / distC;
 
-          // Dış hale
+          // 1) Dış hale
           ctx.globalCompositeOperation = "lighter";
           const halGrad = ctx.createRadialGradient(px, py, pr*0.5, px, py, pr*2.8);
-          halGrad.addColorStop(0, `hsla(${hue}, 80%, 55%, ${0.35 * lifeAlpha})`);
-          halGrad.addColorStop(1, `hsla(${hue}, 80%, 45%, 0)`);
+          halGrad.addColorStop(0, `hsla(${pHue}, 80%, 55%, ${0.35 * lifeAlpha})`);
+          halGrad.addColorStop(1, `hsla(${pHue}, 80%, 45%, 0)`);
           ctx.fillStyle = halGrad;
           ctx.beginPath(); ctx.arc(px, py, pr*2.8, 0, TAU); ctx.fill();
 
-          // Gövde
+          // 2) Halka (gaz devi)
+          if(type.ring){
+            ctx.strokeStyle = `hsla(${pHue}, 65%, 70%, ${0.55 * lifeAlpha})`;
+            ctx.lineWidth = 1.9 * D;
+            ctx.beginPath();
+            ctx.ellipse(px, py, pr * 1.75, pr * 0.50, -0.4, 0, TAU);
+            ctx.stroke();
+            ctx.strokeStyle = `hsla(${pHue}, 65%, 82%, ${0.32 * lifeAlpha})`;
+            ctx.lineWidth = 0.9 * D;
+            ctx.beginPath();
+            ctx.ellipse(px, py, pr * 1.95, pr * 0.56, -0.4, 0, TAU);
+            ctx.stroke();
+          }
+
+          // 3) Gövde
           ctx.globalCompositeOperation = "source-over";
-          ctx.fillStyle = `hsla(${hue}, 75%, 22%, ${0.92 * lifeAlpha})`;
+          const bodyGrad = ctx.createRadialGradient(px - pr*0.35, py - pr*0.35, pr*0.1, px, py, pr);
+          bodyGrad.addColorStop(0, `hsla(${pHue}, 65%, 38%, ${0.95 * lifeAlpha})`);
+          bodyGrad.addColorStop(1, `hsla(${pHue}, 70%, 16%, ${0.95 * lifeAlpha})`);
+          ctx.fillStyle = bodyGrad;
           ctx.beginPath(); ctx.arc(px, py, pr, 0, TAU); ctx.fill();
 
-          // Yüzeydeki dönen lekeler
-          const spin = t * 1.3;
-          for(const s of planet.spots){
-            const sxs = Math.cos(spin + s.ax * 3) * s.ax * pr;
-            if(Math.cos(spin + s.ax * 3) > -0.2){
-              ctx.fillStyle = `hsla(${hue}, 70%, 14%, ${0.75 * lifeAlpha})`;
-              ctx.beginPath();
-              ctx.arc(px + sxs, py + s.ay * pr * 0.85, s.size * pr, 0, TAU);
-              ctx.fill();
+          // 4) Yüzey detayları
+          if(type.bands){
+            ctx.save();
+            ctx.beginPath(); ctx.arc(px, py, pr, 0, TAU); ctx.clip();
+            for(const band of planet.bands){
+              const by = py + band.off * pr;
+              ctx.fillStyle = `hsla(${pHue}, 55%, 28%, ${band.alpha * lifeAlpha})`;
+              ctx.fillRect(px - pr, by, pr*2, band.thick * pr);
+            }
+            ctx.restore();
+          } else if(planet.spots.length){
+            const spin = t * 1.3;
+            for(const s of planet.spots){
+              const sxs = Math.cos(spin + s.ax * 3) * s.ax * pr;
+              if(Math.cos(spin + s.ax * 3) > -0.2){
+                ctx.fillStyle = `hsla(${pHue}, 70%, 13%, ${0.75 * lifeAlpha})`;
+                ctx.beginPath();
+                ctx.arc(px + sxs, py + s.ay * pr * 0.85, s.size * pr, 0, TAU);
+                ctx.fill();
+              }
             }
           }
 
-          // Kenar aydınlanması
+          // 5) Kenar aydınlanması
           ctx.globalCompositeOperation = "lighter";
           const edgeGrad = ctx.createRadialGradient(
             px + nx * pr * 0.9, py + ny * pr * 0.9, pr*0.05,
             px, py, pr * 1.05
           );
-          edgeGrad.addColorStop(0, `hsla(${hue}, 95%, 82%, ${0.85 * lifeAlpha})`);
-          edgeGrad.addColorStop(0.6, `hsla(${hue}, 80%, 45%, ${0.15 * lifeAlpha})`);
-          edgeGrad.addColorStop(1, `hsla(${hue}, 70%, 20%, 0)`);
+          edgeGrad.addColorStop(0, `hsla(${pHue}, 95%, 82%, ${0.85 * lifeAlpha})`);
+          edgeGrad.addColorStop(0.6, `hsla(${pHue}, 80%, 45%, ${0.15 * lifeAlpha})`);
+          edgeGrad.addColorStop(1, `hsla(${pHue}, 70%, 20%, 0)`);
           ctx.fillStyle = edgeGrad;
           ctx.beginPath(); ctx.arc(px, py, pr, 0, TAU); ctx.fill();
 
-          // Temas ışığı (flare ucuna yakın olduğu için güçlendirildi)
+          // 6) Temas ışığı
           const hitX = px + nx * pr * 0.72;
           const hitY = py + ny * pr * 0.72;
           const hitGrad = ctx.createRadialGradient(hitX, hitY, 0, hitX, hitY, pr * 0.85);
           hitGrad.addColorStop(0, `rgba(255, 255, 255, ${lifeAlpha})`);
-          hitGrad.addColorStop(0.3, `hsla(${hue}, 100%, 82%, ${0.7 * lifeAlpha})`);
-          hitGrad.addColorStop(1, `hsla(${hue}, 100%, 60%, 0)`);
+          hitGrad.addColorStop(0.3, `hsla(${pHue}, 100%, 82%, ${0.7 * lifeAlpha})`);
+          hitGrad.addColorStop(1, `hsla(${pHue}, 100%, 60%, 0)`);
           ctx.fillStyle = hitGrad;
           ctx.beginPath(); ctx.arc(hitX, hitY, pr * 0.85, 0, TAU); ctx.fill();
 
-          ctx.globalCompositeOperation = "lighter";
+          // 7) Progress bar (gezegenin altında)
+          const barW = pr * 2.2;
+          const barH = 3 * D;
+          const barX = px - barW/2;
+          const barY = py + pr + 7 * D;
+          ctx.globalCompositeOperation = "source-over";
+          ctx.fillStyle = `rgba(80, 200, 255, ${0.16 * lifeAlpha})`;
+          ctx.fillRect(barX, barY, barW, barH);
+          const fillW = barW * Math.min(1, planet.readProg);
+          const barGrad = ctx.createLinearGradient(barX, 0, barX + barW, 0);
+          barGrad.addColorStop(0, `hsla(${pHue}, 100%, 55%, ${0.9 * lifeAlpha})`);
+          barGrad.addColorStop(1, `hsla(${pHue}, 100%, 78%, ${0.95 * lifeAlpha})`);
+          ctx.fillStyle = barGrad;
+          ctx.fillRect(barX, barY, fillW, barH);
+
+          // 8) Veri kartı (hedeflendiğinde ve okuma başladıysa)
+          const cardAlpha = Math.min(1, planet.readProg * 5) * Math.min(1, (1 - planet.readProg) * 5) * lifeAlpha;
+          if(cardAlpha > 0.05){
+            const scaleUI = Math.min(W,H) / 800;
+            const cardW = 132 * scaleUI;
+            const cardH = 80 * scaleUI;
+            const padding = 9 * scaleUI;
+            const fs = 10.5 * scaleUI;
+            const fsSmall = 9.5 * scaleUI;
+
+            let cardX = px + pr + 14 * scaleUI;
+            if(cardX + cardW > W - 14 * scaleUI){
+              cardX = px - pr - 14 * scaleUI - cardW;
+            }
+            let cardY = py - cardH / 2;
+            if(cardY < 100) cardY = 100;
+            if(cardY + cardH > H - 14 * scaleUI) cardY = H - 14 * scaleUI - cardH;
+
+            // Arka plan
+            ctx.fillStyle = `rgba(0, 10, 22, ${0.82 * cardAlpha})`;
+            const rr = 6 * scaleUI;
+            ctx.beginPath();
+            ctx.moveTo(cardX + rr, cardY);
+            ctx.arcTo(cardX + cardW, cardY, cardX + cardW, cardY + cardH, rr);
+            ctx.arcTo(cardX + cardW, cardY + cardH, cardX, cardY + cardH, rr);
+            ctx.arcTo(cardX, cardY + cardH, cardX, cardY, rr);
+            ctx.arcTo(cardX, cardY, cardX + cardW, cardY, rr);
+            ctx.closePath();
+            ctx.fill();
+
+            // Kenar
+            ctx.strokeStyle = `hsla(${pHue}, 90%, 70%, ${0.75 * cardAlpha})`;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            // Üst şerit
+            ctx.fillStyle = `hsla(${pHue}, 90%, 70%, ${0.95 * cardAlpha})`;
+            ctx.fillRect(cardX, cardY, cardW, 1.5 * scaleUI);
+
+            // Metin
+            ctx.font = `${fs}px 'Courier New', monospace`;
+            ctx.textBaseline = 'top';
+            ctx.fillStyle = `hsla(${pHue}, 100%, 82%, ${cardAlpha})`;
+            ctx.fillText('▸ GEZEGEN-' + planet.id, cardX + padding, cardY + padding);
+
+            ctx.font = `${fsSmall}px 'Courier New', monospace`;
+            ctx.fillStyle = `rgba(200, 230, 255, ${0.92 * cardAlpha})`;
+            ctx.fillText('Tür:      ' + type.label,            cardX + padding, cardY + padding + fs * 1.6);
+            ctx.fillText('Kütle:    ' + planet.data.mass + ' M⊕', cardX + padding, cardY + padding + fs * 3.0);
+            ctx.fillText('Sıcaklık: ' + planet.data.temp + '°C',  cardX + padding, cardY + padding + fs * 4.4);
+            ctx.fillText('Manyetik: ' + planet.data.mag + ' T',   cardX + padding, cardY + padding + fs * 5.8);
+
+            // OKUNUYOR göstergesi
+            if(planet._aimed){
+              ctx.fillStyle = `hsla(120, 100%, 70%, ${cardAlpha})`;
+              ctx.font = `${fsSmall - 1}px 'Courier New', monospace`;
+              ctx.fillText('● OKUNUYOR', cardX + cardW - padding - 62 * scaleUI, cardY + padding);
+            }
+          }
         }
       }
 
@@ -927,26 +1068,23 @@ if('serviceWorker' in navigator){
           const rr = ef.r * prog;
           const alpha = (1 - prog) * visibility;
 
-          // Patlama halkası
           ctx.strokeStyle = `hsla(${hue}, 100%, 85%, ${alpha})`;
           ctx.lineWidth = 3 * (1 - prog) * D;
           ctx.beginPath(); ctx.arc(ef.x, ef.y, rr, 0, TAU); ctx.stroke();
 
-          // İkinci iç halka
           ctx.strokeStyle = `hsla(${hue}, 100%, 95%, ${alpha * 0.6})`;
           ctx.lineWidth = 1.5 * (1 - prog) * D;
           ctx.beginPath(); ctx.arc(ef.x, ef.y, rr * 0.7, 0, TAU); ctx.stroke();
 
-          // Merkez flaş
           if(prog < 0.35){
-            const flashProg = prog / 0.35;
-            const flashR = ef.r * 0.6 * (1 - flashProg);
-            const flashG = ctx.createRadialGradient(ef.x, ef.y, 0, ef.x, ef.y, flashR);
-            flashG.addColorStop(0, `rgba(255,255,255,${(1-flashProg) * visibility})`);
-            flashG.addColorStop(0.5, `hsla(${hue}, 100%, 70%, ${(1-flashProg) * 0.6 * visibility})`);
-            flashG.addColorStop(1, `hsla(${hue}, 100%, 50%, 0)`);
-            ctx.fillStyle = flashG;
-            ctx.beginPath(); ctx.arc(ef.x, ef.y, flashR, 0, TAU); ctx.fill();
+            const fp = prog / 0.35;
+            const fr = ef.r * 0.6 * (1 - fp);
+            const fg = ctx.createRadialGradient(ef.x, ef.y, 0, ef.x, ef.y, fr);
+            fg.addColorStop(0, `rgba(255,255,255,${(1-fp) * visibility})`);
+            fg.addColorStop(0.5, `hsla(${hue}, 100%, 70%, ${(1-fp) * 0.6 * visibility})`);
+            fg.addColorStop(1, `hsla(${hue}, 100%, 50%, 0)`);
+            ctx.fillStyle = fg;
+            ctx.beginPath(); ctx.arc(ef.x, ef.y, fr, 0, TAU); ctx.fill();
           }
         }
       }

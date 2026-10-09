@@ -687,7 +687,7 @@ if('serviceWorker' in navigator){
       ctx.fillStyle = core;
       ctx.beginPath(); ctx.arc(cxc, cyc, coreR, 0, TAU); ctx.fill();
       
-                  // DANGER: 2 eliptik yörünge + uydular (hafif & akıcı)
+                        // DANGER: 3 bağımsız dans eden eliptik yörünge + uydular
       if(currentMode === "danger" && visibility > 0.5){
         ctx.globalCompositeOperation = "lighter";
 
@@ -699,27 +699,30 @@ if('serviceWorker' in navigator){
         ctx.fillStyle = auraG;
         ctx.beginPath(); ctx.arc(cxc, cyc, auraR, 0, TAU); ctx.fill();
 
-        // İki eğik yörünge, zıt yönde
+        // 3 yörünge — her biri kendi ekseninde dans eder
         const orbits = [
-          { tilt:  30, rx: scale*0.85, ry: scale*0.30, speed:  0.7, sats: 2 },
-          { tilt: -30, rx: scale*0.85, ry: scale*0.30, speed: -0.9, sats: 2 },
+          { baseTilt:  30, tiltAmp: 12, tiltSpd: 0.5, rx: scale*0.85, ry: scale*0.30, spin:  0.7, sats: 2 },
+          { baseTilt: -30, tiltAmp: 15, tiltSpd: 0.4, rx: scale*0.85, ry: scale*0.30, spin: -0.9, sats: 2 },
+          { baseTilt:  90, tiltAmp: 20, tiltSpd: 0.35, rx: scale*0.80, ry: scale*0.28, spin:  1.1, sats: 2 },
         ];
 
         for(const orb of orbits){
-          const rot = t * orb.speed;
-          const tiltRad = orb.tilt * Math.PI / 180;
+          // Kendi ekseninde yalpalama — "dans" hissi
+          const tilt = orb.baseTilt + Math.sin(t * orb.tiltSpd) * orb.tiltAmp;
+          const tiltRad = tilt * Math.PI / 180;
+          const rot = t * orb.spin;
 
           ctx.save();
           ctx.translate(cxc, cyc);
           ctx.rotate(tiltRad);
 
-          // Glow katmanı (kalın, soluk)
+          // Glow katmanı
           ctx.strokeStyle = `hsla(${hue}, 100%, 50%, ${0.18 * visibility})`;
           ctx.lineWidth = 4 * D;
           ctx.beginPath(); ctx.ellipse(0, 0, orb.rx, orb.ry, 0, 0, TAU); ctx.stroke();
 
-          // Ana çizgi (ince, parlak)
-          ctx.strokeStyle = `hsla(${hue}, 100%, 68%, ${0.75 * visibility})`;
+          // Ana çizgi
+          ctx.strokeStyle = `hsla(${hue}, 100%, 68%, ${0.78 * visibility})`;
           ctx.lineWidth = 1.4 * D;
           ctx.beginPath(); ctx.ellipse(0, 0, orb.rx, orb.ry, 0, 0, TAU); ctx.stroke();
 

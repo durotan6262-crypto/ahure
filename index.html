@@ -336,12 +336,15 @@ if('serviceWorker' in navigator){
 
   const MODES = {
     idle:       { hueCycle:0, hue:200, hueSpeed:0,  pulse:2.15, breathe:0.72, star:0,  vib:0 },
-    work:       { hueCycle:1, hue:200, hueSpeed:55, pulse:2.6,  breathe:1.05, star:14, vib:0 },
+    work:       { hueCycle:1, hue:200, hueSpeed:55, pulse:2.6,  breathe:1.05, star:0, vib:0 },
     danger:     { hueCycle:0, hue:0,   hueSpeed:0,  pulse:6.5,  breathe:2.4,  star:0,  vib:0 },
     emergency:  { hueCycle:0, hue:48,  hueSpeed:0,  pulse:5.5,  breathe:2.4,  star:0,  vib:0 },
     protection: { hueCycle:0, hue:280, hueSpeed:0,  pulse:1.8,  breathe:0.6,  star:0,  vib:0 },
   };
   const A = { hue:200, pulse:2.15, breathe:0.72, star:0, vib:0 };
+  let workPlanet = null;
+  let workNextSpawn = 0;
+  let currentFlareAngle = 0;
 
   let AC=null, mg=null, atmoStarted=false, atmoInterval=null;
   function initA(){
@@ -650,8 +653,22 @@ if('serviceWorker' in navigator){
 
       const fa = (.42 + .08*Math.sin(t*2.0)) * visibility * scaleFactor;
       const flareWidth = W * scaleFactor;
-      const fx0 = cxc - flareWidth/2;
-      const lg = gx.createLinearGradient(fx0, cyc, fx0+flareWidth, cyc);
+
+      // Work modunda flare, aktif gezegene doğru döner
+      let targetFlareAngle = 0;
+      if(currentMode === 'work' && workPlanet){
+        targetFlareAngle = Math.atan2(workPlanet.y - cyc, workPlanet.x - cxc);
+      }
+      let dAng = targetFlareAngle - currentFlareAngle;
+      while(dAng > Math.PI) dAng -= TAU;
+      while(dAng < -Math.PI) dAng += TAU;
+      currentFlareAngle += dAng * 0.10 * dt;
+
+      gx.save();
+      gx.translate(cxc, cyc);
+      gx.rotate(currentFlareAngle);
+      const halfFlare = flareWidth / 2;
+      const lg = gx.createLinearGradient(-halfFlare, 0, halfFlare, 0);
       lg.addColorStop(0, `hsla(${hue},90%,40%,0)`);
       lg.addColorStop(.18, `hsla(${hue},100%,55%,${fa*.06})`);
       lg.addColorStop(.40, `hsla(${hue},100%,65%,${fa*.16})`);
@@ -662,9 +679,10 @@ if('serviceWorker' in navigator){
       lg.addColorStop(.82, `hsla(${hue},100%,55%,${fa*.06})`);
       lg.addColorStop(1, `hsla(${hue},90%,40%,0)`);
       gx.fillStyle = lg;
-      gx.fillRect(fx0, cyc-.8, flareWidth, 1.6);
+      gx.fillRect(-halfFlare, -.8, flareWidth, 1.6);
       gx.fillStyle = `hsla(${hue}, 90%, 70%, ${fa*.10})`;
-      gx.fillRect(cxc - scale*1.35, cyc-.35, scale*2.7, .7);
+      gx.fillRect(-scale*1.35, -.35, scale*2.7, .7);
+      gx.restore();
 
       ctx.globalCompositeOperation = "lighter";
       ctx.drawImage(glow, 0, 0, W, H);
@@ -687,6 +705,98 @@ if('serviceWorker' in navigator){
       ctx.fillStyle = core;
       ctx.beginPath(); ctx.arc(cxc, cyc, coreR, 0, TAU); ctx.fill();
       
+            // WORK: Sırayla beliren gezegenler — Varlık onları inceler
+      if(currentMode === 'work' && visibility > 0.5){
+        if(!workPlanet && t > workNextSpawn){
+          const angle = Math.random() * TAU;
+          const dist = Math.min(W,H) * (0.30 + Math.random() * 0.20);
+          const pr = Math.min(W,H) * (0.032 + Math.random() * 0.018);
+          workPlanet = {
+            x: cxc + Math.cos(angle) * dist,
+            y: cyc + Math.sin(angle) * dist * 0.85,
+            r: pr,
+            born: t,
+            life: 5.5 + Math.random() * 2.5,
+            spots: Array.from({length: 5 + Math.floor(Math.random()*4)}, () => ({
+              ax: (Math.random()-0.5) * 1.6,
+              ay: (Math.random()-0.5) * 1.6,
+              size: 0.12 + Math.random() * 0.22
+            }))
+          };
+        }
+
+        if(workPlanet){
+          const age = t - workPlanet.born;
+          if(age > workPlanet.life){
+            workPlanet = null;
+            workNextSpawn = t + 0.7;
+          } else {
+            let lifeAlpha = 1;
+            if(age < 0.8) lifeAlpha = age / 0.8;
+            else if(age > workPlanet.life - 0.8) lifeAlpha = (workPlanet.life - age) / 0.8;
+            lifeAlpha = Math.max(0, Math.min(1, lifeAlpha));
+
+            const px = workPlanet.x;
+            const py = workPlanet.y;
+            const pr = workPlanet.r;
+
+            const dxc = cxc - px;
+            const dyc = cyc - py;
+            const distC = Math.sqrt(dxc*dxc + dyc*dyc) || 1;
+            const nx = dxc / distC;
+            const ny = dyc / distC;
+
+            // 1) Dış hale
+            ctx.globalCompositeOperation = "lighter";
+            const halGrad = ctx.createRadialGradient(px, py, pr*0.5, px, py, pr*2.8);
+            halGrad.addColorStop(0, `hsla(${hue}, 80%, 55%, ${0.35 * lifeAlpha})`);
+            halGrad.addColorStop(1, `hsla(${hue}, 80%, 45%, 0)`);
+            ctx.fillStyle = halGrad;
+            ctx.beginPath(); ctx.arc(px, py, pr*2.8, 0, TAU); ctx.fill();
+
+            // 2) Gövde
+            ctx.globalCompositeOperation = "source-over";
+            ctx.fillStyle = `hsla(${hue}, 75%, 22%, ${0.92 * lifeAlpha})`;
+            ctx.beginPath(); ctx.arc(px, py, pr, 0, TAU); ctx.fill();
+
+            // 3) Yüzeydeki dönen lekeler
+            const spin = t * 1.3;
+            for(const s of workPlanet.spots){
+              const sxs = Math.cos(spin + s.ax * 3) * s.ax * pr;
+              if(Math.cos(spin + s.ax * 3) > -0.2){
+                const sxp = px + sxs;
+                const syp = py + s.ay * pr * 0.85;
+                ctx.fillStyle = `hsla(${hue}, 70%, 14%, ${0.75 * lifeAlpha})`;
+                ctx.beginPath(); ctx.arc(sxp, syp, s.size * pr, 0, TAU); ctx.fill();
+              }
+            }
+
+            // 4) Varlık tarafında kenar aydınlanması + ışığın vurduğu nokta
+            ctx.globalCompositeOperation = "lighter";
+            const edgeGrad = ctx.createRadialGradient(
+              px + nx * pr * 0.9, py + ny * pr * 0.9, pr*0.05,
+              px, py, pr * 1.05
+            );
+            edgeGrad.addColorStop(0, `hsla(${hue}, 95%, 82%, ${0.85 * lifeAlpha})`);
+            edgeGrad.addColorStop(0.6, `hsla(${hue}, 80%, 45%, ${0.15 * lifeAlpha})`);
+            edgeGrad.addColorStop(1, `hsla(${hue}, 70%, 20%, 0)`);
+            ctx.fillStyle = edgeGrad;
+            ctx.beginPath(); ctx.arc(px, py, pr, 0, TAU); ctx.fill();
+
+            const hitX = px + nx * pr * 0.72;
+            const hitY = py + ny * pr * 0.72;
+            const hitGrad = ctx.createRadialGradient(hitX, hitY, 0, hitX, hitY, pr * 0.65);
+            hitGrad.addColorStop(0, `rgba(255, 255, 255, ${0.9 * lifeAlpha})`);
+            hitGrad.addColorStop(0.3, `hsla(${hue}, 100%, 78%, ${0.55 * lifeAlpha})`);
+            hitGrad.addColorStop(1, `hsla(${hue}, 100%, 60%, 0)`);
+            ctx.fillStyle = hitGrad;
+            ctx.beginPath(); ctx.arc(hitX, hitY, pr * 0.65, 0, TAU); ctx.fill();
+
+            ctx.globalCompositeOperation = "lighter";
+          }
+        }
+      }
+
                         // DANGER: 3 bağımsız dans eden eliptik yörünge + uydular
       if(currentMode === "danger" && visibility > 0.5){
         ctx.globalCompositeOperation = "lighter";

@@ -339,7 +339,7 @@ if('serviceWorker' in navigator){
     work:       { hueCycle:1, hue:200, hueSpeed:55, pulse:2.6,  breathe:1.05, star:14, vib:0 },
     danger:     { hueCycle:0, hue:0,   hueSpeed:0,  pulse:6.5,  breathe:2.4,  star:1.5,vib:0 },
     emergency:  { hueCycle:0, hue:48,  hueSpeed:0,  pulse:5.5,  breathe:2.4,  star:0,  vib:0 },
-    protection: { hueCycle:0, hue:280, hueSpeed:0,  pulse:1.8,  breathe:0.6,  star:2,  vib:0 },
+    protection: { hueCycle:0, hue:280, hueSpeed:0,  pulse:1.8,  breathe:0.6,  star:0,  vib:0 },
   };
   const A = { hue:200, pulse:2.15, breathe:0.72, star:0, vib:0 };
 
@@ -706,15 +706,61 @@ if('serviceWorker' in navigator){
         }
       }
 
-      // PROTECTION: kalkan dalgası
+            // PROTECTION: petek kalkan (honeycomb shield)
       if(currentMode === "protection" && visibility > 0.5){
         const shieldPulse = (t * 0.8) % 1;
         const shieldR = shieldPulse * Math.min(W,H) * 0.55;
-        const shieldAlpha = (1 - shieldPulse) * 0.35 * visibility;
-        ctx.globalCompositeOperation = "lighter";
-        ctx.strokeStyle = `hsla(${hue}, 100%, 75%, ${shieldAlpha})`;
-        ctx.lineWidth = 3 * D;
-        ctx.beginPath(); ctx.arc(cxc, cyc, shieldR, 0, TAU); ctx.stroke();
+        const shieldAlpha = (1 - shieldPulse) * visibility;
+
+        if(shieldR > 10 && shieldAlpha > 0.02){
+          ctx.globalCompositeOperation = "lighter";
+
+          const hexSize = Math.max(10, Math.min(W,H) * 0.042);
+          const hexW = hexSize * Math.sqrt(3);
+          const dy = hexSize * 1.5;
+
+          // Petek deseni (halkanın içi)
+          ctx.strokeStyle = `hsla(${hue}, 100%, 78%, ${shieldAlpha * 0.55})`;
+          ctx.lineWidth = 0.9 * D;
+          ctx.beginPath();
+
+          const cols = Math.ceil(shieldR / hexW) + 1;
+          const rows = Math.ceil(shieldR / dy) + 1;
+
+          for(let row = -rows; row <= rows; row++){
+            for(let col = -cols; col <= cols; col++){
+              let x = col * hexW;
+              const y = row * dy;
+              if(row % 2 !== 0) x += hexW / 2;
+
+              const dist = Math.sqrt(x*x + y*y);
+              if(dist > shieldR - 2) continue;
+
+              const px = cxc + x;
+              const py = cyc + y;
+
+              for(let i = 0; i < 6; i++){
+                const angle = Math.PI / 3 * i;
+                const hx = px + hexSize * Math.cos(angle);
+                const hy = py + hexSize * Math.sin(angle);
+                if(i === 0) ctx.moveTo(hx, hy);
+                else ctx.lineTo(hx, hy);
+              }
+              ctx.closePath();
+            }
+          }
+          ctx.stroke();
+
+          // Ana parlak halka
+          ctx.strokeStyle = `hsla(${hue}, 100%, 80%, ${shieldAlpha * 1.2})`;
+          ctx.lineWidth = 3 * D;
+          ctx.beginPath(); ctx.arc(cxc, cyc, shieldR, 0, TAU); ctx.stroke();
+
+          // İç ince halka
+          ctx.strokeStyle = `hsla(${hue}, 100%, 92%, ${shieldAlpha * 0.6})`;
+          ctx.lineWidth = 1.5 * D;
+          ctx.beginPath(); ctx.arc(cxc, cyc, shieldR * 0.95, 0, TAU); ctx.stroke();
+        }
       }
 
       ctx.globalCompositeOperation = "source-over";

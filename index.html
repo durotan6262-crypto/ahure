@@ -345,6 +345,8 @@ if('serviceWorker' in navigator){
   let workPlanets = [];
   let workNextSpawn = 0;
   let currentFlareAngles = [0, Math.PI];
+  let workEffects = [];
+  let workAbsorbParticles = [];
 
   let AC=null, mg=null, atmoStarted=false, atmoInterval=null;
   function initA(){
@@ -742,15 +744,14 @@ if('serviceWorker' in navigator){
       ctx.fillStyle = core;
       ctx.beginPath(); ctx.arc(cxc, cyc, coreR, 0, TAU); ctx.fill();
       
-                  // WORK: İki gezegen aynı anda — Varlık ikisini de inceler
+                        // WORK: İki gezegen + absorbsiyon + çarpışma
       if(currentMode === 'work' && visibility > 0.5){
-        // 2 gezegen hedefle — biri ölünce yenisini doğur
+        // Yeni gezegen doğur
         if(workPlanets.length < 2 && t > workNextSpawn){
           let angle;
           if(workPlanets.length === 0){
             angle = Math.random() * TAU;
           } else {
-            // Mevcut gezegenden en az 120° uzakta bir açı seç
             let best = 0, bestMin = -1;
             for(let trial = 0; trial < 8; trial++){
               const cand = Math.random() * TAU;
@@ -782,6 +783,42 @@ if('serviceWorker' in navigator){
           workNextSpawn = t + 0.6;
         }
 
+        // Çarpışma kontrolü (iki gezegen yaklaşırsa)
+        if(workPlanets.length === 2){
+          const p0 = workPlanets[0], p1 = workPlanets[1];
+          const dx = p1.x - p0.x, dy = p1.y - p0.y;
+          const d = Math.sqrt(dx*dx + dy*dy);
+          const minD = (p0.r + p1.r) * 2.5;
+          if(d < minD){
+            workEffects.push({
+              type: 'collision',
+              x: (p0.x + p1.x) / 2,
+              y: (p0.y + p1.y) / 2,
+              born: t, life: 1.2,
+              r: Math.min(W,H) * 0.18
+            });
+            workPlanets = [];
+            workNextSpawn = t + 1.0;
+          }
+        }
+
+        // Absorbsiyon: yaşamın son %25'inde parçacık çek
+        for(const planet of workPlanets){
+          const age = t - planet.born;
+          if(age > planet.life * 0.75 && Math.random() < 0.5){
+            const a = Math.random() * TAU;
+            const d = planet.r * (2.5 + Math.random() * 3.5);
+            workAbsorbParticles.push({
+              x: planet.x + Math.cos(a) * d,
+              y: planet.y + Math.sin(a) * d,
+              tx: planet.x, ty: planet.y,
+              born: t,
+              life: 0.5 + Math.random() * 0.4,
+              size: 0.7 + Math.random() * 1.1
+            });
+          }
+        }
+
         // Ölen gezegenleri çıkar
         for(let i = workPlanets.length - 1; i >= 0; i--){
           if((t - workPlanets[i].born) >= workPlanets[i].life){
@@ -798,17 +835,12 @@ if('serviceWorker' in navigator){
           else if(age > planet.life - 0.8) lifeAlpha = (planet.life - age) / 0.8;
           lifeAlpha = Math.max(0, Math.min(1, lifeAlpha));
 
-          const px = planet.x;
-          const py = planet.y;
-          const pr = planet.r;
-
-          const dxc = cxc - px;
-          const dyc = cyc - py;
+          const px = planet.x, py = planet.y, pr = planet.r;
+          const dxc = cxc - px, dyc = cyc - py;
           const distC = Math.sqrt(dxc*dxc + dyc*dyc) || 1;
-          const nx = dxc / distC;
-          const ny = dyc / distC;
+          const nx = dxc / distC, ny = dyc / distC;
 
-          // 1) Dış hale
+          // Dış hale
           ctx.globalCompositeOperation = "lighter";
           const halGrad = ctx.createRadialGradient(px, py, pr*0.5, px, py, pr*2.8);
           halGrad.addColorStop(0, `hsla(${hue}, 80%, 55%, ${0.35 * lifeAlpha})`);
@@ -816,24 +848,24 @@ if('serviceWorker' in navigator){
           ctx.fillStyle = halGrad;
           ctx.beginPath(); ctx.arc(px, py, pr*2.8, 0, TAU); ctx.fill();
 
-          // 2) Gövde
+          // Gövde
           ctx.globalCompositeOperation = "source-over";
           ctx.fillStyle = `hsla(${hue}, 75%, 22%, ${0.92 * lifeAlpha})`;
           ctx.beginPath(); ctx.arc(px, py, pr, 0, TAU); ctx.fill();
 
-          // 3) Yüzeydeki dönen lekeler
+          // Yüzeydeki dönen lekeler
           const spin = t * 1.3;
           for(const s of planet.spots){
             const sxs = Math.cos(spin + s.ax * 3) * s.ax * pr;
             if(Math.cos(spin + s.ax * 3) > -0.2){
-              const sxp = px + sxs;
-              const syp = py + s.ay * pr * 0.85;
               ctx.fillStyle = `hsla(${hue}, 70%, 14%, ${0.75 * lifeAlpha})`;
-              ctx.beginPath(); ctx.arc(sxp, syp, s.size * pr, 0, TAU); ctx.fill();
+              ctx.beginPath();
+              ctx.arc(px + sxs, py + s.ay * pr * 0.85, s.size * pr, 0, TAU);
+              ctx.fill();
             }
           }
 
-          // 4) Kenar aydınlanması + Varlık ışığının vurduğu nokta
+          // Kenar aydınlanması
           ctx.globalCompositeOperation = "lighter";
           const edgeGrad = ctx.createRadialGradient(
             px + nx * pr * 0.9, py + ny * pr * 0.9, pr*0.05,
@@ -845,16 +877,77 @@ if('serviceWorker' in navigator){
           ctx.fillStyle = edgeGrad;
           ctx.beginPath(); ctx.arc(px, py, pr, 0, TAU); ctx.fill();
 
+          // Temas ışığı (flare ucuna yakın olduğu için güçlendirildi)
           const hitX = px + nx * pr * 0.72;
           const hitY = py + ny * pr * 0.72;
-          const hitGrad = ctx.createRadialGradient(hitX, hitY, 0, hitX, hitY, pr * 0.65);
-          hitGrad.addColorStop(0, `rgba(255, 255, 255, ${0.9 * lifeAlpha})`);
-          hitGrad.addColorStop(0.3, `hsla(${hue}, 100%, 78%, ${0.55 * lifeAlpha})`);
+          const hitGrad = ctx.createRadialGradient(hitX, hitY, 0, hitX, hitY, pr * 0.85);
+          hitGrad.addColorStop(0, `rgba(255, 255, 255, ${lifeAlpha})`);
+          hitGrad.addColorStop(0.3, `hsla(${hue}, 100%, 82%, ${0.7 * lifeAlpha})`);
           hitGrad.addColorStop(1, `hsla(${hue}, 100%, 60%, 0)`);
           ctx.fillStyle = hitGrad;
-          ctx.beginPath(); ctx.arc(hitX, hitY, pr * 0.65, 0, TAU); ctx.fill();
+          ctx.beginPath(); ctx.arc(hitX, hitY, pr * 0.85, 0, TAU); ctx.fill();
 
           ctx.globalCompositeOperation = "lighter";
+        }
+      }
+
+      // Absorbsiyon parçacıkları (her modda temizlenir)
+      if(workAbsorbParticles.length > 0){
+        ctx.globalCompositeOperation = "lighter";
+        for(let i = workAbsorbParticles.length - 1; i >= 0; i--){
+          const ap = workAbsorbParticles[i];
+          const age = t - ap.born;
+          if(age > ap.life){
+            workAbsorbParticles.splice(i, 1);
+            continue;
+          }
+          const prog = age / ap.life;
+          const ex = ap.x + (ap.tx - ap.x) * prog;
+          const ey = ap.y + (ap.ty - ap.y) * prog;
+          const alpha = (1 - prog) * visibility;
+          const size = ap.size * (1 - prog * 0.4);
+          ctx.fillStyle = `hsla(${hue}, 100%, 82%, ${alpha})`;
+          ctx.beginPath(); ctx.arc(ex, ey, size * D, 0, TAU); ctx.fill();
+          ctx.fillStyle = `hsla(${hue}, 100%, 65%, ${alpha * 0.5})`;
+          ctx.beginPath(); ctx.arc(ex, ey, size * 2.2 * D, 0, TAU); ctx.fill();
+        }
+      }
+
+      // Çarpışma efektleri
+      if(workEffects.length > 0){
+        ctx.globalCompositeOperation = "lighter";
+        for(let i = workEffects.length - 1; i >= 0; i--){
+          const ef = workEffects[i];
+          const age = t - ef.born;
+          if(age > ef.life){
+            workEffects.splice(i, 1);
+            continue;
+          }
+          const prog = age / ef.life;
+          const rr = ef.r * prog;
+          const alpha = (1 - prog) * visibility;
+
+          // Patlama halkası
+          ctx.strokeStyle = `hsla(${hue}, 100%, 85%, ${alpha})`;
+          ctx.lineWidth = 3 * (1 - prog) * D;
+          ctx.beginPath(); ctx.arc(ef.x, ef.y, rr, 0, TAU); ctx.stroke();
+
+          // İkinci iç halka
+          ctx.strokeStyle = `hsla(${hue}, 100%, 95%, ${alpha * 0.6})`;
+          ctx.lineWidth = 1.5 * (1 - prog) * D;
+          ctx.beginPath(); ctx.arc(ef.x, ef.y, rr * 0.7, 0, TAU); ctx.stroke();
+
+          // Merkez flaş
+          if(prog < 0.35){
+            const flashProg = prog / 0.35;
+            const flashR = ef.r * 0.6 * (1 - flashProg);
+            const flashG = ctx.createRadialGradient(ef.x, ef.y, 0, ef.x, ef.y, flashR);
+            flashG.addColorStop(0, `rgba(255,255,255,${(1-flashProg) * visibility})`);
+            flashG.addColorStop(0.5, `hsla(${hue}, 100%, 70%, ${(1-flashProg) * 0.6 * visibility})`);
+            flashG.addColorStop(1, `hsla(${hue}, 100%, 50%, 0)`);
+            ctx.fillStyle = flashG;
+            ctx.beginPath(); ctx.arc(ef.x, ef.y, flashR, 0, TAU); ctx.fill();
+          }
         }
       }
 

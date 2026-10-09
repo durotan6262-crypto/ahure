@@ -48,34 +48,41 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;background:#0
 .world-icon{ filter:drop-shadow(0 0 8px rgba(80,200,255,.7)); }
 .danger-icon{ filter:drop-shadow(0 0 8px rgba(255,80,80,.9)); }
 .idle-icon{ filter:drop-shadow(0 0 8px rgba(80,200,255,.7)); }
-.emergency-icon{
-  filter:drop-shadow(0 0 6px rgba(80,200,255,.85));
+.protection-icon{ transition: filter .4s ease; }
+
+#modes button[data-mode="work"].on .world-icon{ animation:spin 6s linear infinite; }
+@keyframes spin{ from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
+
+#modes button[data-mode="danger"].on .danger-icon{ animation:spinDanger 3s linear infinite; }
+@keyframes spinDanger{ from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
+
+@keyframes breatheIdle {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.06); }
+  100% { transform: scale(1); }
 }
-/* Katman kontrolü: Normalde EKG görünür, aktifken spiral görünür */
+@keyframes plasmaShimmer {
+  0%   { filter: drop-shadow(0 0 6px rgba(80,200,255,.6)) hue-rotate(0deg)    saturate(1.00) brightness(1.00); }
+  25%  { filter: drop-shadow(0 0 12px rgba(80,200,255,.9)) hue-rotate(-15deg) saturate(1.25) brightness(1.15); }
+  50%  { filter: drop-shadow(0 0 16px rgba(120,220,255,1)) hue-rotate(-25deg) saturate(1.35) brightness(1.22); }
+  75%  { filter: drop-shadow(0 0 12px rgba(80,200,255,.9)) hue-rotate(-10deg) saturate(1.20) brightness(1.10); }
+  100% { filter: drop-shadow(0 0 6px rgba(80,200,255,.6)) hue-rotate(0deg)    saturate(1.00) brightness(1.00); }
+}
+#modes button[data-mode="idle"].on .idle-icon{
+  animation: breatheIdle 4s ease-in-out infinite, plasmaShimmer 6s ease-in-out infinite;
+}
+
+/* Emergency katman kontrolü */
 #modes button[data-mode="emergency"] .ekg-layer{ display:block; }
 #modes button[data-mode="emergency"] .spiral-layer{ display:none; }
 #modes button[data-mode="emergency"].on .ekg-layer{ display:none; }
 #modes button[data-mode="emergency"].on .spiral-layer{ display:block; }
-  
-/* PROTECTION - Normal hal: mavi neon, sabit yörüngeler */
-.protection-icon{
-  transition: filter .4s ease;
-}
-.protection-icon .prot-orbit{
-  stroke: #4ddcff;
-  transition: stroke .4s ease;
-}
-.protection-icon .prot-electron{
-  fill: #ffffff;
-  stroke: #4ddcff;
-  transition: fill .4s ease, stroke .4s ease;
-}
-.protection-icon .prot-core{
-  stroke: #4ddcff;
-  transition: stroke .4s ease;
-}
 
-/* PROTECTION - Aktif hal: mor yörüngeler, mavi elektronlar, parlak çekirdek */
+/* Protection katman kontrolü */
+.protection-icon .prot-orbit{ stroke: #4ddcff; transition: stroke .4s ease; }
+.protection-icon .prot-electron{ fill: #ffffff; stroke: #4ddcff; transition: fill .4s ease, stroke .4s ease; }
+.protection-icon .prot-core{ stroke: #4ddcff; transition: stroke .4s ease; }
+
 #modes button[data-mode="protection"].on .protection-icon .prot-orbit{
   stroke: #c88fff;
   filter: drop-shadow(0 0 3px #c88fff);
@@ -94,183 +101,83 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;background:#0
   filter: drop-shadow(0 0 8px rgba(200,140,255,.9))
          drop-shadow(0 0 16px rgba(120,200,255,.6));
 }
-
-/* Her yörünge kendi ekseninde döner — bağımsız hız ve yön */
 #modes button[data-mode="protection"].on .orbit-1{
   animation: orbitCW 9s linear infinite;
-  transform-origin: 12px 12px;
-  transform-box: view-box;
+  transform-origin: 12px 12px; transform-box: view-box;
 }
 #modes button[data-mode="protection"].on .orbit-2{
   animation: orbitCCW 13s linear infinite;
-  transform-origin: 12px 12px;
-  transform-box: view-box;
+  transform-origin: 12px 12px; transform-box: view-box;
 }
 #modes button[data-mode="protection"].on .orbit-3{
   animation: orbitCW 11s linear infinite;
-  transform-origin: 12px 12px;
-  transform-box: view-box;
+  transform-origin: 12px 12px; transform-box: view-box;
 }
-
-@keyframes orbitCW {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
-}
-@keyframes orbitCCW {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(-360deg); }
-}
-  
-
-/* WORK: Dünya döner */
-#modes button[data-mode="work"].on .world-icon{ animation:spin 6s linear infinite; }
-@keyframes spin{ from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
-
-/* DANGER: resim döner */
-#modes button[data-mode="danger"].on .danger-icon{ animation:spinDanger 3s linear infinite; }
-@keyframes spinDanger{ from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
-
-/* IDLE: Nefes + plazma titreşimi */
-@keyframes breatheIdle {
-  0%   { transform: scale(1); }
-  50%  { transform: scale(1.06); }
-  100% { transform: scale(1); }
-}
-@keyframes plasmaShimmer {
-  0%   { filter: drop-shadow(0 0 6px rgba(80,200,255,.6)) hue-rotate(0deg)    saturate(1.00) brightness(1.00); }
-  25%  { filter: drop-shadow(0 0 12px rgba(80,200,255,.9)) hue-rotate(-15deg) saturate(1.25) brightness(1.15); }
-  50%  { filter: drop-shadow(0 0 16px rgba(120,220,255,1)) hue-rotate(-25deg) saturate(1.35) brightness(1.22); }
-  75%  { filter: drop-shadow(0 0 12px rgba(80,200,255,.9)) hue-rotate(-10deg) saturate(1.20) brightness(1.10); }
-  100% { filter: drop-shadow(0 0 6px rgba(80,200,255,.6)) hue-rotate(0deg)    saturate(1.00) brightness(1.00); }
-}
-#modes button[data-mode="idle"].on .idle-icon{
-  animation: breatheIdle 4s ease-in-out infinite, plasmaShimmer 6s ease-in-out infinite;
-}
-
-#modes button[data-mode="emergency"].on .emergency-icon{
-  animation: heartPulse 1.4s ease-in-out infinite;
-}
-
-/* PROTECTION: Enerji küresi halkaları döner */
-@keyframes spinProtection {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
-}
-#modes button[data-mode="protection"].on .protection-icon{
-  animation: spinProtection 10s linear infinite;
-}
+@keyframes orbitCW { from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
+@keyframes orbitCCW{ from{transform:rotate(0deg);} to{transform:rotate(-360deg);} }
 
 #err{ position:fixed;bottom:6px;left:6px;color:#f66;font-size:11px;z-index:999; max-width:90vw;word-break:break-all;display:none; background:rgba(0,0,0,.7);padding:4px 8px;border-radius:6px; }
-  /* ===== VARLIK CHAT ARAYÜZÜ ===== */
+
+/* ===== VARLIK CHAT ARAYÜZÜ ===== */
 #chat-panel{
-  position:fixed;
-  left:12px; right:12px;
+  position:fixed; left:12px; right:12px;
   bottom:calc(12px + env(safe-area-inset-bottom, 0px));
-  z-index:100;
-  max-width:640px;
-  margin:0 auto;
-  display:flex;
-  flex-direction:column;
-  gap:8px;
-  pointer-events:none;
+  z-index:100; max-width:640px; margin:0 auto;
+  display:flex; flex-direction:column; gap:8px; pointer-events:none;
 }
 #chat-log{
-  display:flex;
-  flex-direction:column;
-  gap:6px;
-  max-height:45vh;
-  overflow-y:auto;
-  padding:4px;
-  pointer-events:auto;
-  scrollbar-width:thin;
+  display:flex; flex-direction:column; gap:6px;
+  max-height:45vh; overflow-y:auto; padding:4px;
+  pointer-events:auto; scrollbar-width:thin;
   scrollbar-color:rgba(80,200,255,.3) transparent;
 }
 #chat-log::-webkit-scrollbar{ width:4px; }
 #chat-log::-webkit-scrollbar-thumb{ background:rgba(80,200,255,.3); border-radius:2px; }
-
 .msg{
-  padding:8px 14px;
-  border-radius:16px;
-  font-size:14px;
-  line-height:1.45;
-  backdrop-filter:blur(10px);
-  animation:msgIn .32s ease-out;
-  max-width:85%;
-  word-wrap:break-word;
+  padding:8px 14px; border-radius:16px; font-size:14px; line-height:1.45;
+  backdrop-filter:blur(10px); animation:msgIn .32s ease-out;
+  max-width:85%; word-wrap:break-word;
 }
 .msg.user{
-  align-self:flex-end;
-  background:rgba(80,200,255,.15);
-  border:1px solid rgba(80,200,255,.4);
-  color:#cfeeff;
+  align-self:flex-end; background:rgba(80,200,255,.15);
+  border:1px solid rgba(80,200,255,.4); color:#cfeeff;
   border-bottom-right-radius:4px;
 }
 .msg.varlik{
-  align-self:flex-start;
-  background:rgba(0,20,40,.6);
-  border:1px solid rgba(80,200,255,.35);
-  color:#eaf7ff;
+  align-self:flex-start; background:rgba(0,20,40,.6);
+  border:1px solid rgba(80,200,255,.35); color:#eaf7ff;
   box-shadow:0 0 12px rgba(80,200,255,.15);
   border-bottom-left-radius:4px;
 }
-.msg.varlik::before{
-  content:'◉ ';
-  color:#7ce;
-  font-weight:bold;
-}
+.msg.varlik::before{ content:'◉ '; color:#7ce; font-weight:bold; }
 .msg.typing::before{ content:'◉ '; color:#7ce; }
-.msg.typing .dots span{
-  display:inline-block;
-  animation:dotPulse 1.4s infinite;
-}
+.msg.typing .dots span{ display:inline-block; animation:dotPulse 1.4s infinite; }
 .msg.typing .dots span:nth-child(2){ animation-delay:.2s; }
 .msg.typing .dots span:nth-child(3){ animation-delay:.4s; }
-@keyframes dotPulse{
-  0%,60%,100%{ opacity:.25; }
-  30%{ opacity:1; }
-}
-@keyframes msgIn{
-  from{ opacity:0; transform:translateY(8px); }
-  to{ opacity:1; transform:translateY(0); }
-}
+@keyframes dotPulse{ 0%,60%,100%{opacity:.25;} 30%{opacity:1;} }
+@keyframes msgIn{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
 
 #chat-input-row{
-  display:flex;
-  gap:8px;
-  align-items:center;
+  display:flex; gap:8px; align-items:center;
   background:rgba(0,20,40,.6);
   border:1px solid rgba(80,200,255,.35);
-  border-radius:24px;
-  padding:5px 5px 5px 18px;
-  backdrop-filter:blur(12px);
-  pointer-events:auto;
+  border-radius:24px; padding:5px 5px 5px 18px;
+  backdrop-filter:blur(12px); pointer-events:auto;
   box-shadow:0 0 18px rgba(80,200,255,.1);
 }
 #chat-input{
-  flex:1;
-  background:transparent;
-  border:none;
-  outline:none;
-  color:#fff;
-  font-size:16px;
-  font-family:inherit;
-  padding:8px 0;
-  min-width:0;
+  flex:1; background:transparent; border:none; outline:none;
+  color:#fff; font-size:16px; font-family:inherit;
+  padding:8px 0; min-width:0;
 }
 #chat-input::placeholder{ color:rgba(180,220,255,.45); }
 #chat-send{
-  width:38px; height:38px;
-  border-radius:50%;
+  width:38px; height:38px; border-radius:50%;
   border:1px solid rgba(80,200,255,.5);
-  background:rgba(80,200,255,.2);
-  color:#cfeeff;
-  cursor:pointer;
-  font-size:16px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  transition:all .2s;
-  flex-shrink:0;
+  background:rgba(80,200,255,.2); color:#cfeeff;
+  cursor:pointer; font-size:16px;
+  display:flex; align-items:center; justify-content:center;
+  transition:all .2s; flex-shrink:0;
 }
 #chat-send:hover{ background:rgba(80,200,255,.35); }
 #chat-send:active{ transform:scale(.92); }
@@ -281,19 +188,15 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;background:#0
 <canvas id="c"></canvas>
 
 <div id="modes" style="position:fixed;top:14px;right:14px;left:auto;bottom:auto;z-index:100;display:flex;flex-direction:row;flex-wrap:nowrap;gap:6px;white-space:nowrap;width:max-content;max-width:none;margin:0;padding:0;align-items:center;justify-content:flex-end;">
-  <!-- 1. IDLE (Kara Delik) -->
   <button data-mode="idle" class="on">
     <img src="Idle.png" class="idle-icon" alt="Boşta">
   </button>
-  <!-- 2. WORK (Dünya) -->
   <button data-mode="work">
     <img src="world.png" class="world-icon" alt="Çalışma">
   </button>
-  <!-- 3. DANGER (danger.png) -->
   <button data-mode="danger">
     <img src="danger.png" class="danger-icon" alt="Tehlike">
   </button>
-            <!-- 4. EMERGENCY -->
   <button data-mode="emergency">
     <svg class="emergency-icon" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
       <defs>
@@ -304,11 +207,7 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;background:#0
         </filter>
         <filter id="dotGlow" x="-300%" y="-300%" width="700%" height="700%">
           <feGaussianBlur stdDeviation="1.3" result="b"/>
-          <feMerge>
-            <feMergeNode in="b"/>
-            <feMergeNode in="b"/>
-            <feMergeNode in="SourceGraphic"/>
-          </feMerge>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
         </filter>
         <filter id="spiralGlow" x="-200%" y="-200%" width="500%" height="500%">
           <feGaussianBlur stdDeviation="0.55" result="b"/>
@@ -317,121 +216,58 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;background:#0
         <path id="spiralPath" pathLength="100"
               d="M 22 12 L 16.79 20.30 L 7.42 19.94 L 3.25 12 L 7.83 4.78 L 15.96 5.14 L 19.5 12 L 15.54 18.13 L 8.67 17.78 L 5.75 12 L 9.08 6.95 L 14.71 7.31 L 17 12 L 14.29 15.97 L 9.92 15.61 L 8.25 12 L 10.33 9.11 L 13.46 9.47 L 14.5 12 L 13.04 13.80 L 11.17 13.44 L 10.75 12 L 11.58 11.28 L 12.21 11.64 L 12 12"/>
       </defs>
-
-      <!-- ================== KATMAN 1: EKG (normal hal) ================== -->
       <g class="ekg-layer">
-        <!-- 3 katmanlı mavi neon iz: noktanın arkasında kalır -->
-        <use href="#ekgPath" stroke="#1a8cff" stroke-width="1.2" opacity="0.35"
-             stroke-dasharray="18 100" filter="url(#ekgGlow)">
+        <use href="#ekgPath" stroke="#1a8cff" stroke-width="1.2" opacity="0.35" stroke-dasharray="18 100" filter="url(#ekgGlow)">
           <animate attributeName="stroke-dashoffset" from="18" to="-26" dur="2.4s" repeatCount="indefinite"/>
         </use>
-        <use href="#ekgPath" stroke="#3db8ff" stroke-width="1.8" opacity="0.65"
-             stroke-dasharray="11 100" filter="url(#ekgGlow)">
+        <use href="#ekgPath" stroke="#3db8ff" stroke-width="1.8" opacity="0.65" stroke-dasharray="11 100" filter="url(#ekgGlow)">
           <animate attributeName="stroke-dashoffset" from="11" to="-33" dur="2.4s" repeatCount="indefinite"/>
         </use>
-        <use href="#ekgPath" stroke="#7fe4ff" stroke-width="2.3" opacity="1"
-             stroke-dasharray="5 100" filter="url(#ekgGlow)">
+        <use href="#ekgPath" stroke="#7fe4ff" stroke-width="2.3" opacity="1" stroke-dasharray="5 100" filter="url(#ekgGlow)">
           <animate attributeName="stroke-dashoffset" from="5" to="-39" dur="2.4s" repeatCount="indefinite"/>
         </use>
-        <!-- Mavi nokta -->
         <circle r="1.8" fill="#66f5ff" filter="url(#dotGlow)">
-          <animateMotion dur="2.4s" repeatCount="indefinite">
-            <mpath href="#ekgPath"/>
-          </animateMotion>
-          <animate attributeName="opacity"
-                   values="0;1;1;1;1;0"
-                   keyTimes="0;0.06;0.3;0.7;0.94;1"
-                   dur="2.4s" repeatCount="indefinite"/>
+          <animateMotion dur="2.4s" repeatCount="indefinite"><mpath href="#ekgPath"/></animateMotion>
+          <animate attributeName="opacity" values="0;1;1;1;1;0" keyTimes="0;0.06;0.3;0.7;0.94;1" dur="2.4s" repeatCount="indefinite"/>
         </circle>
         <circle r="0.8" fill="#ffffff">
-          <animateMotion dur="2.4s" repeatCount="indefinite">
-            <mpath href="#ekgPath"/>
-          </animateMotion>
-          <animate attributeName="opacity"
-                   values="0;1;1;1;1;0"
-                   keyTimes="0;0.06;0.3;0.7;0.94;1"
-                   dur="2.4s" repeatCount="indefinite"/>
+          <animateMotion dur="2.4s" repeatCount="indefinite"><mpath href="#ekgPath"/></animateMotion>
+          <animate attributeName="opacity" values="0;1;1;1;1;0" keyTimes="0;0.06;0.3;0.7;0.94;1" dur="2.4s" repeatCount="indefinite"/>
         </circle>
       </g>
-
-      <!-- ================== KATMAN 2: SPİRAL + PATLAMA (aktif hal) ================== -->
       <g class="spiral-layer">
-        <!-- Soluk arka plan spirali -->
         <use href="#spiralPath" stroke="#0a3a5a" stroke-width="0.7" opacity="0.45"/>
-
-        <!-- Mavi neon iz: dıştan içe çizilir -->
-        <use href="#spiralPath" stroke="#1a6aff" stroke-width="3" opacity="0.45"
-             stroke-dasharray="100 100" stroke-dashoffset="100" filter="url(#spiralGlow)">
+        <use href="#spiralPath" stroke="#1a6aff" stroke-width="3" opacity="0.45" stroke-dasharray="100 100" stroke-dashoffset="100" filter="url(#spiralGlow)">
           <animate attributeName="stroke-dashoffset" from="100" to="0" dur="2.5s" repeatCount="indefinite"/>
         </use>
-        <use href="#spiralPath" stroke="#3db8ff" stroke-width="1.8" opacity="0.9"
-             stroke-dasharray="100 100" stroke-dashoffset="100" filter="url(#spiralGlow)">
+        <use href="#spiralPath" stroke="#3db8ff" stroke-width="1.8" opacity="0.9" stroke-dasharray="100 100" stroke-dashoffset="100" filter="url(#spiralGlow)">
           <animate attributeName="stroke-dashoffset" from="100" to="0" dur="2.5s" repeatCount="indefinite"/>
         </use>
-        <use href="#spiralPath" stroke="#cceeff" stroke-width="0.6"
-             stroke-dasharray="100 100" stroke-dashoffset="100">
+        <use href="#spiralPath" stroke="#cceeff" stroke-width="0.6" stroke-dasharray="100 100" stroke-dashoffset="100">
           <animate attributeName="stroke-dashoffset" from="100" to="0" dur="2.5s" repeatCount="indefinite"/>
         </use>
-
-        <!-- Mavi nokta: spiral üzerinde dıştan içe, merkezde sarıya döner -->
         <circle r="1.7" fill="#66f5ff" filter="url(#dotGlow)">
-          <animateMotion dur="2.5s" repeatCount="indefinite">
-            <mpath href="#spiralPath"/>
-          </animateMotion>
-          <animate attributeName="fill"
-                   values="#66f5ff;#66f5ff;#66f5ff;#ffea00;#ffffff"
-                   keyTimes="0;0.5;0.78;0.9;1"
-                   dur="2.5s" repeatCount="indefinite"/>
-          <animate attributeName="r"
-                   values="1.7;1.7;1.7;2.6;0"
-                   keyTimes="0;0.5;0.78;0.9;1"
-                   dur="2.5s" repeatCount="indefinite"/>
-          <animate attributeName="opacity"
-                   values="0;1;1;1;1;0"
-                   keyTimes="0;0.05;0.5;0.8;0.97;1"
-                   dur="2.5s" repeatCount="indefinite"/>
+          <animateMotion dur="2.5s" repeatCount="indefinite"><mpath href="#spiralPath"/></animateMotion>
+          <animate attributeName="fill" values="#66f5ff;#66f5ff;#66f5ff;#ffea00;#ffffff" keyTimes="0;0.5;0.78;0.9;1" dur="2.5s" repeatCount="indefinite"/>
+          <animate attributeName="r" values="1.7;1.7;1.7;2.6;0" keyTimes="0;0.5;0.78;0.9;1" dur="2.5s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="0;1;1;1;1;0" keyTimes="0;0.05;0.5;0.8;0.97;1" dur="2.5s" repeatCount="indefinite"/>
         </circle>
         <circle r="0.7" fill="#ffffff">
-          <animateMotion dur="2.5s" repeatCount="indefinite">
-            <mpath href="#spiralPath"/>
-          </animateMotion>
-          <animate attributeName="opacity"
-                   values="0;1;1;1;0"
-                   keyTimes="0;0.05;0.78;0.88;1"
-                   dur="2.5s" repeatCount="indefinite"/>
+          <animateMotion dur="2.5s" repeatCount="indefinite"><mpath href="#spiralPath"/></animateMotion>
+          <animate attributeName="opacity" values="0;1;1;1;0" keyTimes="0;0.05;0.78;0.88;1" dur="2.5s" repeatCount="indefinite"/>
         </circle>
-
-        <!-- Sarı patlama halkası -->
         <circle cx="12" cy="12" r="0" fill="none" stroke="#ffe600" stroke-width="0.8" opacity="0">
-          <animate attributeName="r"
-                   values="0;0;0;0;5.5;8"
-                   keyTimes="0;0.78;0.88;0.92;0.96;1"
-                   dur="2.5s" repeatCount="indefinite"/>
-          <animate attributeName="opacity"
-                   values="0;0;0;0;0.95;0"
-                   keyTimes="0;0.78;0.88;0.92;0.97;1"
-                   dur="2.5s" repeatCount="indefinite"/>
-          <animate attributeName="stroke-width"
-                   values="0.8;0.8;0.8;0.8;1.6;0.2"
-                   keyTimes="0;0.78;0.88;0.92;0.97;1"
-                   dur="2.5s" repeatCount="indefinite"/>
+          <animate attributeName="r" values="0;0;0;0;5.5;8" keyTimes="0;0.78;0.88;0.92;0.96;1" dur="2.5s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="0;0;0;0;0.95;0" keyTimes="0;0.78;0.88;0.92;0.97;1" dur="2.5s" repeatCount="indefinite"/>
+          <animate attributeName="stroke-width" values="0.8;0.8;0.8;0.8;1.6;0.2" keyTimes="0;0.78;0.88;0.92;0.97;1" dur="2.5s" repeatCount="indefinite"/>
         </circle>
-
-        <!-- Merkez sarı flaş -->
         <circle cx="12" cy="12" r="0" fill="#ffe600" filter="url(#dotGlow)">
-          <animate attributeName="r"
-                   values="0;0;0;0;2.8;0"
-                   keyTimes="0;0.78;0.88;0.92;0.97;1"
-                   dur="2.5s" repeatCount="indefinite"/>
-          <animate attributeName="opacity"
-                   values="0;0;0;0;1;0"
-                   keyTimes="0;0.78;0.88;0.92;0.97;1"
-                   dur="2.5s" repeatCount="indefinite"/>
+          <animate attributeName="r" values="0;0;0;0;2.8;0" keyTimes="0;0.78;0.88;0.92;0.97;1" dur="2.5s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="0;0;0;0;1;0" keyTimes="0;0.78;0.88;0.92;0.97;1" dur="2.5s" repeatCount="indefinite"/>
         </circle>
       </g>
     </svg>
   </button>
-        <!-- 5. PROTECTION (Atom) -->
   <button data-mode="protection">
     <svg class="protection-icon" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
       <defs>
@@ -440,52 +276,35 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;background:#0
           <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
         </filter>
       </defs>
-
-      <!-- Yörünge 1: Yatay — saat yönü, 9s -->
       <g transform="rotate(0 12 12)">
         <g class="orbit-spin orbit-1">
-          <path class="prot-orbit" d="M 3 12 A 9 4.5 0 1 1 21 12 A 9 4.5 0 1 1 3 12"
-                stroke="#4ddcff" stroke-width="0.75" fill="none" filter="url(#protGlow)"/>
+          <path class="prot-orbit" d="M 3 12 A 9 4.5 0 1 1 21 12 A 9 4.5 0 1 1 3 12" stroke="#4ddcff" stroke-width="0.75" fill="none" filter="url(#protGlow)"/>
           <circle class="prot-electron" r="1.05" fill="#ffffff" stroke="#4ddcff" stroke-width="0.4">
-            <animateMotion dur="4s" repeatCount="indefinite"
-                           path="M 3 12 A 9 4.5 0 1 1 21 12 A 9 4.5 0 1 1 3 12"/>
+            <animateMotion dur="4s" repeatCount="indefinite" path="M 3 12 A 9 4.5 0 1 1 21 12 A 9 4.5 0 1 1 3 12"/>
           </circle>
         </g>
       </g>
-
-      <!-- Yörünge 2: +60° — saat yönünün tersi, 13s -->
       <g transform="rotate(60 12 12)">
         <g class="orbit-spin orbit-2">
-          <path class="prot-orbit" d="M 3 12 A 9 4.5 0 1 1 21 12 A 9 4.5 0 1 1 3 12"
-                stroke="#4ddcff" stroke-width="0.75" fill="none" filter="url(#protGlow)"/>
+          <path class="prot-orbit" d="M 3 12 A 9 4.5 0 1 1 21 12 A 9 4.5 0 1 1 3 12" stroke="#4ddcff" stroke-width="0.75" fill="none" filter="url(#protGlow)"/>
           <circle class="prot-electron" r="1.05" fill="#ffffff" stroke="#4ddcff" stroke-width="0.4">
-            <animateMotion dur="4s" repeatCount="indefinite" begin="1.3s"
-                           path="M 3 12 A 9 4.5 0 1 1 21 12 A 9 4.5 0 1 1 3 12"/>
+            <animateMotion dur="4s" repeatCount="indefinite" begin="1.3s" path="M 3 12 A 9 4.5 0 1 1 21 12 A 9 4.5 0 1 1 3 12"/>
           </circle>
         </g>
       </g>
-
-      <!-- Yörünge 3: -60° — saat yönü, 11s -->
       <g transform="rotate(-60 12 12)">
         <g class="orbit-spin orbit-3">
-          <path class="prot-orbit" d="M 3 12 A 9 4.5 0 1 1 21 12 A 9 4.5 0 1 1 3 12"
-                stroke="#4ddcff" stroke-width="0.75" fill="none" filter="url(#protGlow)"/>
+          <path class="prot-orbit" d="M 3 12 A 9 4.5 0 1 1 21 12 A 9 4.5 0 1 1 3 12" stroke="#4ddcff" stroke-width="0.75" fill="none" filter="url(#protGlow)"/>
           <circle class="prot-electron" r="1.05" fill="#ffffff" stroke="#4ddcff" stroke-width="0.4">
-            <animateMotion dur="4s" repeatCount="indefinite" begin="2.6s"
-                           path="M 3 12 A 9 4.5 0 1 1 21 12 A 9 4.5 0 1 1 3 12"/>
+            <animateMotion dur="4s" repeatCount="indefinite" begin="2.6s" path="M 3 12 A 9 4.5 0 1 1 21 12 A 9 4.5 0 1 1 3 12"/>
           </circle>
         </g>
       </g>
-
-      <!-- Merkez çekirdek (en üstte kalsın) -->
-      <circle class="prot-core" cx="12" cy="12" r="2"
-              stroke="#4ddcff" stroke-width="0.9" fill="none" filter="url(#protGlow)"/>
+      <circle class="prot-core" cx="12" cy="12" r="2" stroke="#4ddcff" stroke-width="0.9" fill="none" filter="url(#protGlow)"/>
     </svg>
   </button>
 </div>
 
-<div id="err"></div>
-<!-- VARLIK CHAT ARAYÜZÜ -->
 <div id="chat-panel">
   <div id="chat-log"></div>
   <div id="chat-input-row">
@@ -493,6 +312,9 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;background:#0
     <button id="chat-send" aria-label="Gönder">➤</button>
   </div>
 </div>
+
+<div id="err"></div>
+
 <script>
 if('serviceWorker' in navigator){
   window.addEventListener('load', ()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); });
@@ -522,9 +344,16 @@ if('serviceWorker' in navigator){
   const A = { hue:200, pulse:2.15, breathe:0.72, star:0, vib:0 };
 
   let AC=null, mg=null, atmoStarted=false, atmoInterval=null;
-  function initA(){ try{ AC = new (window.AudioContext||window.webkitAudioContext)(); mg = AC.createGain(); mg.gain.value = 0; mg.connect(AC.destination); return true; }catch(e){ return false; } }
+  function initA(){
+    try{
+      AC = new (window.AudioContext||window.webkitAudioContext)();
+      mg = AC.createGain(); mg.gain.value = 0; mg.connect(AC.destination);
+      return true;
+    }catch(e){ return false; }
+  }
   function atmo(){
-    if(!AC || atmoStarted) return; atmoStarted = true;
+    if(!AC || atmoStarted) return;
+    atmoStarted = true;
     const now = AC.currentTime, dur = 60;
     const nb = AC.createBuffer(1, AC.sampleRate*dur, AC.sampleRate);
     const nd = nb.getChannelData(0); let l = 0;
@@ -535,35 +364,38 @@ if('serviceWorker' in navigator){
     const sg = AC.createGain(); sg.gain.value = 0.30;
     const sub = AC.createOscillator(); sub.type = "sine"; sub.frequency.value = 40;
     const subG = AC.createGain(); subG.gain.value = 0.08;
-    ns.connect(lp).connect(bs).connect(sg).connect(mg); sub.connect(subG).connect(mg);
-        ns.start(now); sub.start(now);
-    // İlk açılış: yumuşak fade-in
+    ns.connect(lp).connect(bs).connect(sg).connect(mg);
+    sub.connect(subG).connect(mg);
+    ns.start(now); sub.start(now);
     mg.gain.setValueAtTime(0.001, now);
     mg.gain.linearRampToValueAtTime(0.30, now + 1.5);
-    // Döngüyü başlat (14 saniyede bir: fade-in → kal → fade-out → sessizlik)
     if(atmoInterval) clearInterval(atmoInterval);
     atmoInterval = setInterval(atmoPulse, 14000);
   }
-    function atmoPulse(){
+  function atmoPulse(){
     if(!AC || !mg) return;
     const now = AC.currentTime;
     mg.gain.cancelScheduledValues(now);
     if(currentMode !== 'idle'){
-      // Idle değilse sessiz
       mg.gain.setValueAtTime(mg.gain.value, now);
       mg.gain.linearRampToValueAtTime(0.001, now + 0.6);
       return;
     }
-    // Idle: 1.5s fade-in → 6s kal → 12s'e kadar fade-out → ~2s sessizlik
     mg.gain.setValueAtTime(0.001, now);
     mg.gain.linearRampToValueAtTime(0.28, now + 1.5);
     mg.gain.linearRampToValueAtTime(0.28, now + 6.0);
     mg.gain.linearRampToValueAtTime(0.001, now + 12.0);
   }
-  function tryA(){ if(atmoStarted) return; if(!AC){ if(!initA()) return; } if(AC.state === "suspended") AC.resume().then(atmo).catch(()=>{}); else atmo(); }
+  function tryA(){
+    if(atmoStarted) return;
+    if(!AC){ if(!initA()) return; }
+    if(AC.state === "suspended") AC.resume().then(atmo).catch(()=>{});
+    else atmo();
+  }
   tryA(); setTimeout(tryA,100); setTimeout(tryA,500);
   const kick = ()=>{ tryA(); };
-  document.addEventListener("click", kick); document.addEventListener("touchstart", kick);
+  document.addEventListener("click", kick);
+  document.addEventListener("touchstart", kick);
 
   function resize(){
     W = innerWidth; H = innerHeight; D = Math.min(devicePixelRatio||1, 2);
@@ -571,9 +403,15 @@ if('serviceWorker' in navigator){
     ctx.setTransform(D,0,0,D,0,0); gx.setTransform(D,0,0,D,0,0);
     cx = W*.5; cy = H*.5; build();
   }
-  addEventListener("resize", resize); addEventListener("orientationchange", ()=>setTimeout(resize,300));
+  addEventListener("resize", resize);
+  addEventListener("orientationchange", ()=>setTimeout(resize,300));
 
-  function gauss(){ let a=0, b=0; while(!a) a = Math.random(); while(!b) b = Math.random(); return Math.sqrt(-2*Math.log(a)) * Math.cos(TAU*b); }
+  function gauss(){
+    let a=0, b=0;
+    while(!a) a = Math.random();
+    while(!b) b = Math.random();
+    return Math.sqrt(-2*Math.log(a)) * Math.cos(TAU*b);
+  }
 
   function build(){
     P=[]; stars=[]; trails=[]; warpStars=[];
@@ -590,9 +428,18 @@ if('serviceWorker' in navigator){
       const edge = 1 - Math.min(1, Math.sqrt(x*x+y*y+zz*zz)/(scale*1.3));
       P.push({ x, y, z:zz, ox:x, oy:y, oz:zz, phase: Math.random()*TAU, speed: .45 + Math.random()*.75, size: .45 + Math.random()*1.55, alpha: .25 + Math.random()*.62, edge, pulse: Math.random()*TAU });
     }
-    for(let i=0;i<150;i++){ const a = Math.random()*TAU; const r = scale * (1.05 + Math.random()*1.8); stars.push({ x: Math.cos(a)*r*(.8+Math.random()*.7), y: Math.sin(a)*r*(.45+Math.random()*.7), z: gauss()*scale*.8, a: .08 + Math.random()*.3, s: .3 + Math.random()*1.1 }); }
-    for(let i=0;i<90;i++){ const a = Math.random()*TAU; trails.push({ a, r: scale*(.62 + Math.random()*.52), len: scale*(.18 + Math.random()*.42), wob: Math.random()*TAU, speed: .25 + Math.random()*.5, alpha: .04 + Math.random()*.12 }); }
-    for(let i=0;i<250;i++){ warpStars.push({ x: (Math.random()-0.5)*2, y: (Math.random()-0.5)*2, z: 100 + Math.random()*700, a: 0.5 + Math.random()*0.5, s: 0.6 + Math.random()*1.5 }); }
+    for(let i=0;i<150;i++){
+      const a = Math.random()*TAU;
+      const r = scale * (1.05 + Math.random()*1.8);
+      stars.push({ x: Math.cos(a)*r*(.8+Math.random()*.7), y: Math.sin(a)*r*(.45+Math.random()*.7), z: gauss()*scale*.8, a: .08 + Math.random()*.3, s: .3 + Math.random()*1.1 });
+    }
+    for(let i=0;i<90;i++){
+      const a = Math.random()*TAU;
+      trails.push({ a, r: scale*(.62 + Math.random()*.52), len: scale*(.18 + Math.random()*.42), wob: Math.random()*TAU, speed: .25 + Math.random()*.5, alpha: .04 + Math.random()*.12 });
+    }
+    for(let i=0;i<250;i++){
+      warpStars.push({ x: (Math.random()-0.5)*2, y: (Math.random()-0.5)*2, z: 100 + Math.random()*700, a: 0.5 + Math.random()*0.5, s: 0.6 + Math.random()*1.5 });
+    }
   }
 
   function proj(p){ const f = 720/(720 + p.z); return { x: cx + p.x*f, y: cy + p.y*f, s: f }; }
@@ -605,140 +452,287 @@ if('serviceWorker' in navigator){
 
   let currentMode = "idle";
   const modeButtons = document.querySelectorAll("#modes button");
-    function setMode(name){
+  function setMode(name){
     if(!MODES[name]) return;
     currentMode = name;
     modeButtons.forEach(b => b.classList.toggle("on", b.dataset.mode === name));
-          window.__varlikMode = name;
-    // Mod değişince sesi hemen ayarla
     if(atmoStarted) atmoPulse();
   }
   modeButtons.forEach(b => {
     const handler = (e) => { e.preventDefault(); setMode(b.dataset.mode); };
-    b.addEventListener("click", handler); b.addEventListener("touchstart", handler, { passive:false });
+    b.addEventListener("click", handler);
+    b.addEventListener("touchstart", handler, { passive:false });
   });
 
   function frame(now){
     try {
-      const dt = Math.min((now-last)/16.67 || 1, 2); last = now; t += .012 * dt;
+      const dt = Math.min((now-last)/16.67 || 1, 2);
+      last = now; t += .012 * dt;
+
       const target = MODES[currentMode] || MODES.idle;
       A.pulse   += (target.pulse   - A.pulse)   * 0.05;
       A.breathe += (target.breathe - A.breathe) * 0.05;
       A.star    += (target.star    - A.star)    * 0.05;
       A.vib     += (target.vib     - A.vib)     * 0.05;
-      if(target.hueCycle){ A.hue = (A.hue + target.hueSpeed * dt * 0.016 + 360) % 360; }
-      else { let hd = target.hue - A.hue; while(hd > 180) hd -= 360; while(hd < -180) hd += 360; A.hue = (A.hue + hd * 0.06 + 360) % 360; }
+
+      if(target.hueCycle){
+        A.hue = (A.hue + target.hueSpeed * dt * 0.016 + 360) % 360;
+      } else {
+        let hd = target.hue - A.hue;
+        while(hd > 180) hd -= 360;
+        while(hd < -180) hd += 360;
+        A.hue = (A.hue + hd * 0.06 + 360) % 360;
+      }
       const hue = A.hue;
-      const vibX = Math.sin(t*32) * A.vib; const vibY = Math.cos(t*29) * A.vib;
-      const cxc = cx + vibX; const cyc = cy + vibY;
-      const elapsed = now - introStart; const raw = Math.min(1, elapsed/INTRO_DURATION);
+
+      const vibX = Math.sin(t*32) * A.vib;
+      const vibY = Math.cos(t*29) * A.vib;
+      const cxc = cx + vibX;
+      const cyc = cy + vibY;
+
+      const elapsed = now - introStart;
+      const raw = Math.min(1, elapsed/INTRO_DURATION);
       const intro = raw < 0.5 ? 4*raw*raw*raw : 1 - Math.pow(-2*raw+2, 3)/2;
-      const visibility = intro; const scaleFactor = intro;
-      ctx.globalCompositeOperation = "source-over"; ctx.fillStyle = "rgba(0,0,3,.30)"; ctx.fillRect(0,0,W,H);
+      const visibility = intro;
+      const scaleFactor = intro;
+
+      ctx.globalCompositeOperation = "source-over";
+      ctx.fillStyle = "rgba(0,0,3,.30)";
+      ctx.fillRect(0,0,W,H);
+
       const bg = ctx.createRadialGradient(cxc, cyc, 0, cxc, cyc, Math.min(W,H)*.62);
-      bg.addColorStop(0, `hsla(${hue},80%,8%,${.20*visibility})`); bg.addColorStop(.45, `hsla(${hue},70%,4%,${.10*visibility})`); bg.addColorStop(1, "rgba(0,0,0,0)");
-      ctx.fillStyle = bg; ctx.fillRect(0,0,W,H);
-      const scale = Math.min(W,H) * .235 * scaleFactor; const breathe = 1 + Math.sin(t * A.breathe) * .018 * scaleFactor; const spin = t * .045;
+      bg.addColorStop(0, `hsla(${hue},80%,8%,${.20*visibility})`);
+      bg.addColorStop(.45, `hsla(${hue},70%,4%,${.10*visibility})`);
+      bg.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = bg;
+      ctx.fillRect(0,0,W,H);
+
+      const scale = Math.min(W,H) * .235 * scaleFactor;
+      const breathe = 1 + Math.sin(t * A.breathe) * .018 * scaleFactor;
+      const spin = t * .045;
+
       for(const p of P){
         const ang = p.phase + t*p.speed*.17;
-        const nx = Math.sin(ang + p.y*.008) * 2.2 * scaleFactor; const ny = Math.cos(ang + p.x*.007) * 1.7 * scaleFactor; const nz = Math.sin(ang + p.z*.006) * 1.4 * scaleFactor;
+        const nx = Math.sin(ang + p.y*.008) * 2.2 * scaleFactor;
+        const ny = Math.cos(ang + p.x*.007) * 1.7 * scaleFactor;
+        const nz = Math.sin(ang + p.z*.006) * 1.4 * scaleFactor;
         const tgt = p.edge < .15 ? .75 : 1;
-        p.x += ((p.ox*scaleFactor*breathe*tgt + nx) - p.x) * .010 * dt; p.y += ((p.oy*scaleFactor*breathe*tgt + ny) - p.y) * .010 * dt; p.z += ((p.oz*scaleFactor + nz) - p.z) * .009 * dt;
+        p.x += ((p.ox*scaleFactor*breathe*tgt + nx) - p.x) * .010 * dt;
+        p.y += ((p.oy*scaleFactor*breathe*tgt + ny) - p.y) * .010 * dt;
+        p.z += ((p.oz*scaleFactor + nz) - p.z) * .009 * dt;
       }
-      const pts = []; const ca = Math.cos(spin), sa = Math.sin(spin);
-      for(const p of P){ const rx = p.x*ca - p.z*sa; const rz = p.x*sa + p.z*ca; const pp = { x:rx, y:p.y, z:rz }; const q = proj(pp); pts.push({ p:pp, q }); }
+
+      const pts = [];
+      const ca = Math.cos(spin), sa = Math.sin(spin);
+      for(const p of P){
+        const rx = p.x*ca - p.z*sa;
+        const rz = p.x*sa + p.z*ca;
+        const pp = { x:rx, y:p.y, z:rz };
+        const q = proj(pp);
+        pts.push({ p:pp, q });
+      }
       pts.sort((a,b) => b.p.z - a.p.z);
-      gx.globalCompositeOperation = "source-over"; gx.clearRect(0,0,W,H);
-      radial(cxc, cyc, scale*1.12, [[0, `hsla(${hue},90%,45%,${.20*visibility})`], [.24, `hsla(${hue},85%,40%,${.11*visibility})`], [.62, `hsla(${hue},80%,25%,${.04*visibility})`], [1, "rgba(0,0,0,0)"]]);
+
+      gx.globalCompositeOperation = "source-over";
+      gx.clearRect(0,0,W,H);
+
+      radial(cxc, cyc, scale*1.12, [
+        [0, `hsla(${hue},90%,45%,${.20*visibility})`],
+        [.24, `hsla(${hue},85%,40%,${.11*visibility})`],
+        [.62, `hsla(${hue},80%,25%,${.04*visibility})`],
+        [1, "rgba(0,0,0,0)"]
+      ]);
+
       gx.globalCompositeOperation = "lighter";
+
       const warpAlpha = Math.min(1, A.star / 8);
       if(warpAlpha > 0.02){
         const spread = Math.min(W,H) * 0.9;
         for(const ws of warpStars){
-          ws.z += A.star * dt * 0.6; if(ws.z > 800){ ws.z = -500; ws.x = (Math.random()-0.5)*2; ws.y = (Math.random()-0.5)*2; }
-          const f = 720/(720 + ws.z); if(f <= 0.01) continue;
-          const x = cxc + ws.x * f * spread; const y = cyc + ws.y * f * spread;
-          const size = ws.s * f * D * 1.2; const baseAlpha = ws.a * warpAlpha * Math.min(1, f * 1.2);
-          const twinkle = 0.55 + 0.45 * Math.sin(t*3.5 + ws.x*12 + ws.y*8); const pHue = (hue + ws.x*30 + 360) % 360; const starAlpha = baseAlpha * twinkle;
-          gx.fillStyle = `hsla(${pHue}, 90%, 75%, ${starAlpha * 0.25})`; gx.beginPath(); gx.arc(x, y, Math.max(1, size*2.4), 0, TAU); gx.fill();
-          gx.fillStyle = `hsla(${pHue}, 60%, 92%, ${starAlpha})`; gx.beginPath(); gx.arc(x, y, Math.max(0.5, size), 0, TAU); gx.fill();
+          ws.z += A.star * dt * 0.6;
+          if(ws.z > 800){
+            ws.z = -500;
+            ws.x = (Math.random()-0.5)*2;
+            ws.y = (Math.random()-0.5)*2;
+          }
+          const f = 720/(720 + ws.z);
+          if(f <= 0.01) continue;
+          const x = cxc + ws.x * f * spread;
+          const y = cyc + ws.y * f * spread;
+          const size = ws.s * f * D * 1.2;
+          const baseAlpha = ws.a * warpAlpha * Math.min(1, f * 1.2);
+          const twinkle = 0.55 + 0.45 * Math.sin(t*3.5 + ws.x*12 + ws.y*8);
+          const pHue = (hue + ws.x*30 + 360) % 360;
+          const starAlpha = baseAlpha * twinkle;
+          gx.fillStyle = `hsla(${pHue}, 90%, 75%, ${starAlpha * 0.25})`;
+          gx.beginPath(); gx.arc(x, y, Math.max(1, size*2.4), 0, TAU); gx.fill();
+          gx.fillStyle = `hsla(${pHue}, 60%, 92%, ${starAlpha})`;
+          gx.beginPath(); gx.arc(x, y, Math.max(0.5, size), 0, TAU); gx.fill();
         }
       }
+
       gx.lineCap = "round";
       for(const f of trails){
-        const a = f.a + t*f.speed*.11; const x0 = cxc + Math.cos(a)*f.r*scaleFactor; const y0 = cyc + Math.sin(a)*f.r*.62*scaleFactor;
-        const x1 = cxc + Math.cos(a+.25+Math.sin(f.wob+t)*.12)*(f.r+f.len)*scaleFactor; const y1 = cyc + Math.sin(a+.25+Math.sin(f.wob+t)*.12)*(f.r+f.len)*.62*scaleFactor;
-        const xm = (x0+x1)/2 + Math.sin(t+f.wob)*18*scaleFactor; const ym = (y0+y1)/2 + Math.cos(t*.8+f.wob)*15*scaleFactor;
-        gx.strokeStyle = `hsla(${hue}, 95%, 55%, ${f.alpha*visibility})`; gx.lineWidth = .8*scaleFactor; gx.beginPath(); gx.moveTo(x0, y0); gx.quadraticCurveTo(xm, ym, x1, y1); gx.stroke();
+        const a = f.a + t*f.speed*.11;
+        const x0 = cxc + Math.cos(a)*f.r*scaleFactor;
+        const y0 = cyc + Math.sin(a)*f.r*.62*scaleFactor;
+        const x1 = cxc + Math.cos(a+.25+Math.sin(f.wob+t)*.12)*(f.r+f.len)*scaleFactor;
+        const y1 = cyc + Math.sin(a+.25+Math.sin(f.wob+t)*.12)*(f.r+f.len)*.62*scaleFactor;
+        const xm = (x0+x1)/2 + Math.sin(t+f.wob)*18*scaleFactor;
+        const ym = (y0+y1)/2 + Math.cos(t*.8+f.wob)*15*scaleFactor;
+        gx.strokeStyle = `hsla(${hue}, 95%, 55%, ${f.alpha*visibility})`;
+        gx.lineWidth = .8*scaleFactor;
+        gx.beginPath();
+        gx.moveTo(x0, y0);
+        gx.quadraticCurveTo(xm, ym, x1, y1);
+        gx.stroke();
       }
+
       gx.lineWidth = .65*Math.max(0.1, scaleFactor);
       for(let i=0;i<pts.length;i++){
         const A_ = pts[i];
         for(let j=i+1;j<Math.min(pts.length, i+28);j++){
-          const B_ = pts[j]; const dx = A_.p.x - B_.p.x; const dy = A_.p.y - B_.p.y; const dz = A_.p.z - B_.p.z;
-          const d = Math.sqrt(dx*dx + dy*dy + dz*dz); const maxD = scale*.29;
-          if(d < maxD){ const a = (1 - d/maxD) * .08 * visibility; const depth = .35 + .65*A_.q.s; gx.strokeStyle = `hsla(${hue}, 90%, 60%, ${a*depth})`; gx.beginPath(); gx.moveTo(A_.q.x, A_.q.y); gx.lineTo(B_.q.x, B_.q.y); gx.stroke(); }
+          const B_ = pts[j];
+          const dx = A_.p.x - B_.p.x;
+          const dy = A_.p.y - B_.p.y;
+          const dz = A_.p.z - B_.p.z;
+          const d = Math.sqrt(dx*dx + dy*dy + dz*dz);
+          const maxD = scale*.29;
+          if(d < maxD){
+            const a = (1 - d/maxD) * .08 * visibility;
+            const depth = .35 + .65*A_.q.s;
+            gx.strokeStyle = `hsla(${hue}, 90%, 60%, ${a*depth})`;
+            gx.beginPath();
+            gx.moveTo(A_.q.x, A_.q.y);
+            gx.lineTo(B_.q.x, B_.q.y);
+            gx.stroke();
+          }
         }
       }
+
       for(const o of pts){
-        const p = o.p, q = o.q; const pulse = .7 + .3*Math.sin(t*1.8 + p.pulse); const a = p.alpha * (.45 + .55*q.s) * pulse * visibility; const r = Math.max(.45, p.size*q.s);
-        gx.fillStyle = `hsla(${hue}, 90%, 55%, ${a*.34})`; gx.beginPath(); gx.arc(q.x, q.y, r*4.2, 0, TAU); gx.fill();
-        gx.fillStyle = `hsla(${hue}, 80%, 70%, ${a*.82})`; gx.beginPath(); gx.arc(q.x, q.y, r, 0, TAU); gx.fill();
+        const p = o.p, q = o.q;
+        const pulse = .7 + .3*Math.sin(t*1.8 + p.pulse);
+        const a = p.alpha * (.45 + .55*q.s) * pulse * visibility;
+        const r = Math.max(.45, p.size*q.s);
+        gx.fillStyle = `hsla(${hue}, 90%, 55%, ${a*.34})`;
+        gx.beginPath(); gx.arc(q.x, q.y, r*4.2, 0, TAU); gx.fill();
+        gx.fillStyle = `hsla(${hue}, 80%, 70%, ${a*.82})`;
+        gx.beginPath(); gx.arc(q.x, q.y, r, 0, TAU); gx.fill();
       }
-      for(const s of stars){ const q = proj({ x:s.x*scaleFactor, y:s.y*scaleFactor, z:s.z*scaleFactor }); gx.fillStyle = `hsla(${hue}, 85%, 65%, ${s.a*visibility})`; gx.fillRect(q.x, q.y, s.s, s.s); }
-            // Emergency'de lub-dub kalp atışı, diğer modlarda normal nabız
+
+      for(const s of stars){
+        const q = proj({ x:s.x*scaleFactor, y:s.y*scaleFactor, z:s.z*scaleFactor });
+        gx.fillStyle = `hsla(${hue}, 85%, 65%, ${s.a*visibility})`;
+        gx.fillRect(q.x, q.y, s.s, s.s);
+      }
+
+      // Emergency: lub-dub kalp atışı. Diğer modlarda normal nabız
       let pulse;
       if(currentMode === 'emergency'){
-        const bt = (t * 1.1) % 1;               // 0..1 arası döngü, ~1.1 Hz
-        const lub = Math.exp(-Math.pow((bt-0.05)/0.06, 2));   // 1. vuruş (lub)
-        const dub = Math.exp(-Math.pow((bt-0.22)/0.05, 2)) * 0.6; // 2. vuruş (dub)
+        const bt = (t * 1.1) % 1;
+        const lub = Math.exp(-Math.pow((bt-0.05)/0.06, 2));
+        const dub = Math.exp(-Math.pow((bt-0.22)/0.05, 2)) * 0.6;
         pulse = 1 + (lub + dub) * 0.22;
       } else {
         pulse = 1 + Math.sin(t*A.pulse)*.045;
       }
-      radial(cxc, cyc, coreScale, [[0, `rgba(255,255,255,${.95*coreBright})`], [.045, `hsla(${hue}, 100%, 75%, ${.75*coreBright})`], [.18, `hsla(${hue}, 95%, 55%, ${.28*coreBright})`], [.55, `hsla(${hue}, 90%, 40%, ${.08*coreBright})`], [1, "rgba(0,0,0,0)"]]);
-      const fa = (.42 + .08*Math.sin(t*2.0)) * visibility * scaleFactor; const flareWidth = W * scaleFactor; const fx0 = cxc - flareWidth/2;
+      const coreScale = Math.max(0.01, scale*.34*pulse);
+      const coreBright = intro * intro;
+
+      radial(cxc, cyc, coreScale, [
+        [0, `rgba(255,255,255,${.95*coreBright})`],
+        [.045, `hsla(${hue}, 100%, 75%, ${.75*coreBright})`],
+        [.18, `hsla(${hue}, 95%, 55%, ${.28*coreBright})`],
+        [.55, `hsla(${hue}, 90%, 40%, ${.08*coreBright})`],
+        [1, "rgba(0,0,0,0)"]
+      ]);
+
+      const fa = (.42 + .08*Math.sin(t*2.0)) * visibility * scaleFactor;
+      const flareWidth = W * scaleFactor;
+      const fx0 = cxc - flareWidth/2;
       const lg = gx.createLinearGradient(fx0, cyc, fx0+flareWidth, cyc);
-      lg.addColorStop(0, `hsla(${hue},90%,40%,0)`); lg.addColorStop(.18, `hsla(${hue},100%,55%,${fa*.06})`); lg.addColorStop(.40, `hsla(${hue},100%,65%,${fa*.16})`); lg.addColorStop(.495, `hsla(${hue},80%,80%,${fa*.58})`); lg.addColorStop(.5, `rgba(235,255,255,${fa})`); lg.addColorStop(.505, `hsla(${hue},80%,80%,${fa*.58})`); lg.addColorStop(.60, `hsla(${hue},100%,65%,${fa*.16})`); lg.addColorStop(.82, `hsla(${hue},100%,55%,${fa*.06})`); lg.addColorStop(1, `hsla(${hue},90%,40%,0)`);
-      gx.fillStyle = lg; gx.fillRect(fx0, cyc-.8, flareWidth, 1.6); gx.fillStyle = `hsla(${hue}, 90%, 70%, ${fa*.10})`; gx.fillRect(cxc - scale*1.35, cyc-.35, scale*2.7, .7);
-      ctx.globalCompositeOperation = "lighter"; ctx.drawImage(glow, 0, 0, W, H); ctx.globalCompositeOperation = "lighter";
-      for(const o of pts){ const p = o.p, q = o.q; const pulse2 = .72 + .28*Math.sin(t*1.7 + p.pulse); const r = Math.max(.35, p.size*q.s*.72); ctx.fillStyle = `hsla(${hue}, 80%, 75%, ${p.alpha*.8*pulse2*visibility})`; ctx.beginPath(); ctx.arc(q.x, q.y, r, 0, TAU); ctx.fill(); }
-      const coreR = Math.max(.1, scale*.045); const core = ctx.createRadialGradient(cxc, cyc, 0, cxc, cyc, coreR);
-      core.addColorStop(0, `rgba(255,255,255,${coreBright})`); core.addColorStop(.22, `hsla(${hue}, 100%, 88%, ${.98*coreBright})`); core.addColorStop(.7, `hsla(${hue}, 90%, 65%, ${.25*coreBright})`); core.addColorStop(1, "rgba(0,0,0,0)");
-      ctx.fillStyle = core; ctx.beginPath(); ctx.arc(cxc, cyc, coreR, 0, TAU); ctx.fill();
-            // EMERGENCY: merkezden dışa yayılan sonar halkaları
+      lg.addColorStop(0, `hsla(${hue},90%,40%,0)`);
+      lg.addColorStop(.18, `hsla(${hue},100%,55%,${fa*.06})`);
+      lg.addColorStop(.40, `hsla(${hue},100%,65%,${fa*.16})`);
+      lg.addColorStop(.495, `hsla(${hue},80%,80%,${fa*.58})`);
+      lg.addColorStop(.5, `rgba(235,255,255,${fa})`);
+      lg.addColorStop(.505, `hsla(${hue},80%,80%,${fa*.58})`);
+      lg.addColorStop(.60, `hsla(${hue},100%,65%,${fa*.16})`);
+      lg.addColorStop(.82, `hsla(${hue},100%,55%,${fa*.06})`);
+      lg.addColorStop(1, `hsla(${hue},90%,40%,0)`);
+      gx.fillStyle = lg;
+      gx.fillRect(fx0, cyc-.8, flareWidth, 1.6);
+      gx.fillStyle = `hsla(${hue}, 90%, 70%, ${fa*.10})`;
+      gx.fillRect(cxc - scale*1.35, cyc-.35, scale*2.7, .7);
+
+      ctx.globalCompositeOperation = "lighter";
+      ctx.drawImage(glow, 0, 0, W, H);
+
+      ctx.globalCompositeOperation = "lighter";
+      for(const o of pts){
+        const p = o.p, q = o.q;
+        const pulse2 = .72 + .28*Math.sin(t*1.7 + p.pulse);
+        const r = Math.max(.35, p.size*q.s*.72);
+        ctx.fillStyle = `hsla(${hue}, 80%, 75%, ${p.alpha*.8*pulse2*visibility})`;
+        ctx.beginPath(); ctx.arc(q.x, q.y, r, 0, TAU); ctx.fill();
+      }
+
+      const coreR = Math.max(.1, scale*.045);
+      const core = ctx.createRadialGradient(cxc, cyc, 0, cxc, cyc, coreR);
+      core.addColorStop(0, `rgba(255,255,255,${coreBright})`);
+      core.addColorStop(.22, `hsla(${hue}, 100%, 88%, ${.98*coreBright})`);
+      core.addColorStop(.7, `hsla(${hue}, 90%, 65%, ${.25*coreBright})`);
+      core.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = core;
+      ctx.beginPath(); ctx.arc(cxc, cyc, coreR, 0, TAU); ctx.fill();
+
+      // EMERGENCY: sonar halkaları
       if(currentMode === "emergency" && visibility > 0.5){
         ctx.globalCompositeOperation = "lighter";
         const ringCount = 3;
-        const ringCycle = 1.6; // her 1.6 saniyede yeni halka
+        const ringCycle = 1.6;
         for(let i=0;i<ringCount;i++){
-          const phase = ((t / ringCycle) + i/ringCount) % 1; // 0..1
+          const phase = ((t / ringCycle) + i/ringCount) % 1;
           const ringR = phase * Math.min(W,H) * 0.55;
           const alpha = (1 - phase) * 0.55 * visibility;
           if(alpha <= 0.01) continue;
           ctx.strokeStyle = `hsla(48, 100%, 65%, ${alpha})`;
           ctx.lineWidth = (2.2 - phase * 1.4) * D;
-          ctx.beginPath();
-          ctx.arc(cxc, cyc, ringR, 0, TAU);
-          ctx.stroke();
-          // iç halka (daha soluk, hafif gecikmeli)
+          ctx.beginPath(); ctx.arc(cxc, cyc, ringR, 0, TAU); ctx.stroke();
           ctx.strokeStyle = `hsla(48, 100%, 80%, ${alpha * 0.35})`;
           ctx.lineWidth = 1 * D;
-          ctx.beginPath();
-          ctx.arc(cxc, cyc, ringR * 0.92, 0, TAU);
-          ctx.stroke();
+          ctx.beginPath(); ctx.arc(cxc, cyc, ringR * 0.92, 0, TAU); ctx.stroke();
         }
       }
-        const shieldPulse = (t * 0.8) % 1; const shieldR = shieldPulse * Math.min(W,H) * 0.55; const shieldAlpha = (1 - shieldPulse) * 0.35 * visibility;
-        ctx.globalCompositeOperation = "lighter"; ctx.strokeStyle = `hsla(${hue}, 100%, 75%, ${shieldAlpha})`; ctx.lineWidth = 3 * D; ctx.beginPath(); ctx.arc(cxc, cyc, shieldR, 0, TAU); ctx.stroke();
+
+      // PROTECTION: kalkan dalgası
+      if(currentMode === "protection" && visibility > 0.5){
+        const shieldPulse = (t * 0.8) % 1;
+        const shieldR = shieldPulse * Math.min(W,H) * 0.55;
+        const shieldAlpha = (1 - shieldPulse) * 0.35 * visibility;
+        ctx.globalCompositeOperation = "lighter";
+        ctx.strokeStyle = `hsla(${hue}, 100%, 75%, ${shieldAlpha})`;
+        ctx.lineWidth = 3 * D;
+        ctx.beginPath(); ctx.arc(cxc, cyc, shieldR, 0, TAU); ctx.stroke();
       }
+
       ctx.globalCompositeOperation = "source-over";
-    } catch(e){ errEl.style.display = "block"; errEl.textContent = "Hata: " + e.message; console.error(e); }
+    } catch(e){
+      errEl.style.display = "block";
+      errEl.textContent = "Hata: " + e.message;
+      console.error(e);
+    }
     requestAnimationFrame(frame);
   }
-  resize(); requestAnimationFrame(frame);
+
+  resize();
+  requestAnimationFrame(frame);
 })();
-  /* ===== VARLIK CHAT MANTIĞI ===== */
+</script>
+
+<script>
+/* ===== VARLIK CHAT MANTIĞI ===== */
 (() => {
   const log = document.getElementById('chat-log');
   const input = document.getElementById('chat-input');
@@ -763,21 +757,11 @@ if('serviceWorker' in navigator){
     const mode = window.__varlikMode || 'idle';
     const t = (userText || '').toLowerCase();
 
-    // Selamlama kontrolü
-    if(/merhaba|selam|hey|hi|hello/.test(t)){
-      return "Merhaba. Seni dinliyorum.";
-    }
-    if(/nasılsın|naber|how are you/.test(t)){
-      return "İyiyim. Sistemlerim çalışıyor. Sen nasılsın?";
-    }
-    if(/adın ne|ismin ne|kimsin/.test(t)){
-      return "Ben Varlık. Sana ait bir yapay zeka.";
-    }
-    if(/teşekkür|sağol|thanks/.test(t)){
-      return "Rica ederim.";
-    }
+    if(/merhaba|selam|hey|hi|hello/.test(t)) return "Merhaba. Seni dinliyorum.";
+    if(/nasılsın|naber|how are you/.test(t)) return "İyiyim. Sistemlerim çalışıyor. Sen nasılsın?";
+    if(/adın ne|ismin ne|kimsin/.test(t)) return "Ben Varlık. Sana ait bir yapay zeka.";
+    if(/teşekkür|sağol|thanks/.test(t)) return "Rica ederim.";
 
-    // Mod bazlı yanıt
     const replies = {
       idle:       ["Seni dinliyorum.", "Buradayım.", "Ne düşünüyorsun?", "Anlat bakalım."],
       work:       ["Araştırıyorum...", "Veri topluyorum.", "Çalışma modundayım.", "Analiz ediyorum."],
@@ -799,7 +783,6 @@ if('serviceWorker' in navigator){
     sendBtn.disabled = true;
     const typing = addMsg('', 'varlik typing');
 
-    // Gerçekçi düşünme süresi
     const delay = 500 + Math.random() * 900;
     await new Promise(r => setTimeout(r, delay));
 

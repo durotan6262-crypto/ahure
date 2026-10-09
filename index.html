@@ -687,61 +687,57 @@ if('serviceWorker' in navigator){
       ctx.fillStyle = core;
       ctx.beginPath(); ctx.arc(cxc, cyc, coreR, 0, TAU); ctx.fill();
       
-            // DANGER: kontra-dönen kırmızı enerji halkaları
+                  // DANGER: 2 eliptik yörünge + uydular (hafif & akıcı)
       if(currentMode === "danger" && visibility > 0.5){
         ctx.globalCompositeOperation = "lighter";
 
-        const ringData = [
-          { r: scale * 0.50, w: 2.4, speed:  0.9, dash: [7, 9],   sat: 3, alpha: 1.00 },
-          { r: scale * 0.74, w: 1.9, speed: -0.6, dash: [5, 7],   sat: 2, alpha: 0.85 },
-          { r: scale * 1.00, w: 1.4, speed:  1.3, dash: [4, 6],   sat: 4, alpha: 0.65 },
-        ];
-
-        // Merkez kırmızı aura (nabız atıyor)
-        const auraR = scale * (0.34 + Math.sin(t * 3.2) * 0.035);
+        // Merkez kırmızı aura (nabız)
+        const auraR = scale * (0.30 + Math.sin(t * 3.2) * 0.03);
         const auraG = ctx.createRadialGradient(cxc, cyc, 0, cxc, cyc, auraR);
-        auraG.addColorStop(0,   `hsla(${hue}, 100%, 68%, ${0.42 * visibility})`);
-        auraG.addColorStop(0.5, `hsla(${hue}, 100%, 55%, ${0.18 * visibility})`);
-        auraG.addColorStop(1,   `hsla(${hue}, 100%, 45%, 0)`);
+        auraG.addColorStop(0, `hsla(${hue}, 100%, 68%, ${0.35 * visibility})`);
+        auraG.addColorStop(1, `hsla(${hue}, 100%, 45%, 0)`);
         ctx.fillStyle = auraG;
         ctx.beginPath(); ctx.arc(cxc, cyc, auraR, 0, TAU); ctx.fill();
 
-        for(const ring of ringData){
-          const rot = t * ring.speed;
+        // İki eğik yörünge, zıt yönde
+        const orbits = [
+          { tilt:  30, rx: scale*0.85, ry: scale*0.30, speed:  0.7, sats: 2 },
+          { tilt: -30, rx: scale*0.85, ry: scale*0.30, speed: -0.9, sats: 2 },
+        ];
 
-          // Halka gölgesi (çok parlak neon etkisi)
-          ctx.shadowBlur = 14 * D;
-          ctx.shadowColor = `hsla(${hue}, 100%, 60%, ${0.9 * visibility})`;
+        for(const orb of orbits){
+          const rot = t * orb.speed;
+          const tiltRad = orb.tilt * Math.PI / 180;
 
-          // Noktalı halka — akan enerji hissi
-          ctx.strokeStyle = `hsla(${hue}, 100%, 65%, ${ring.alpha * visibility})`;
-          ctx.lineWidth = ring.w * D;
-          ctx.setLineDash([ring.dash[0] * D, ring.dash[1] * D]);
-          ctx.lineDashOffset = -rot * 40;
-          ctx.beginPath();
-          ctx.arc(cxc, cyc, ring.r, 0, TAU);
-          ctx.stroke();
-          ctx.setLineDash([]);
+          ctx.save();
+          ctx.translate(cxc, cyc);
+          ctx.rotate(tiltRad);
 
-          // Halkada dönen parlak uydu noktaları
-          for(let i = 0; i < ring.sat; i++){
-            const a = rot + (i / ring.sat) * TAU;
-            const sx = cxc + Math.cos(a) * ring.r;
-            const sy = cyc + Math.sin(a) * ring.r;
+          // Glow katmanı (kalın, soluk)
+          ctx.strokeStyle = `hsla(${hue}, 100%, 50%, ${0.18 * visibility})`;
+          ctx.lineWidth = 4 * D;
+          ctx.beginPath(); ctx.ellipse(0, 0, orb.rx, orb.ry, 0, 0, TAU); ctx.stroke();
 
-            // Uydu etrafındaki hale
-            ctx.fillStyle = `hsla(${hue}, 100%, 60%, ${0.45 * visibility})`;
-            ctx.beginPath(); ctx.arc(sx, sy, 5.5 * D, 0, TAU); ctx.fill();
+          // Ana çizgi (ince, parlak)
+          ctx.strokeStyle = `hsla(${hue}, 100%, 68%, ${0.75 * visibility})`;
+          ctx.lineWidth = 1.4 * D;
+          ctx.beginPath(); ctx.ellipse(0, 0, orb.rx, orb.ry, 0, 0, TAU); ctx.stroke();
 
-            // Uydu çekirdeği (beyaz-sıcak)
-            ctx.fillStyle = `hsla(${hue}, 100%, 95%, ${1.0 * visibility})`;
-            ctx.beginPath(); ctx.arc(sx, sy, 2 * D, 0, TAU); ctx.fill();
+          // Uydular
+          for(let i = 0; i < orb.sats; i++){
+            const a = rot + (i / orb.sats) * TAU;
+            const sx = Math.cos(a) * orb.rx;
+            const sy = Math.sin(a) * orb.ry;
+
+            ctx.fillStyle = `hsla(${hue}, 100%, 55%, ${0.35 * visibility})`;
+            ctx.beginPath(); ctx.arc(sx, sy, 4.5 * D, 0, TAU); ctx.fill();
+            ctx.fillStyle = `hsla(${hue}, 100%, 78%, ${0.6 * visibility})`;
+            ctx.beginPath(); ctx.arc(sx, sy, 2.4 * D, 0, TAU); ctx.fill();
+            ctx.fillStyle = `rgba(255,235,235,${0.95 * visibility})`;
+            ctx.beginPath(); ctx.arc(sx, sy, 1.1 * D, 0, TAU); ctx.fill();
           }
-
-          ctx.shadowBlur = 0;
+          ctx.restore();
         }
-
-        ctx.shadowBlur = 0;
       }
 
       // EMERGENCY: sonar halkaları

@@ -591,7 +591,7 @@ if('serviceWorker' in navigator){
       gx.lineWidth = .65*Math.max(0.1, scaleFactor);
       for(let i=0;i<pts.length;i++){
         const A_ = pts[i];
-        for(let j=i+1;j<Math.min(pts.length, i+16);j++){
+        for(let j=i+1;j<Math.min(pts.length, i+28);j++){
           const B_ = pts[j];
           const dx = A_.p.x - B_.p.x;
           const dy = A_.p.y - B_.p.y;

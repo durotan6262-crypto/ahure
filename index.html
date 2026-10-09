@@ -516,7 +516,7 @@ if('serviceWorker' in navigator){
     idle:       { hueCycle:0, hue:200, hueSpeed:0,  pulse:2.15, breathe:0.72, star:0,  vib:0 },
     work:       { hueCycle:1, hue:200, hueSpeed:55, pulse:2.6,  breathe:1.05, star:14, vib:0 },
     danger:     { hueCycle:0, hue:0,   hueSpeed:0,  pulse:6.5,  breathe:2.4,  star:1.5,vib:0 },
-    emergency:  { hueCycle:0, hue:48,  hueSpeed:0,  pulse:4.5,  breathe:3.0,  star:0.8,vib:3 },
+    emergency:  { hueCycle:0, hue:48,  hueSpeed:0,  pulse:5.5,  breathe:2.4,  star:0,  vib:0 },
     protection: { hueCycle:0, hue:280, hueSpeed:0,  pulse:1.8,  breathe:0.6,  star:2,  vib:0 },
   };
   const A = { hue:200, pulse:2.15, breathe:0.72, star:0, vib:0 };
@@ -686,7 +686,16 @@ if('serviceWorker' in navigator){
         gx.fillStyle = `hsla(${hue}, 80%, 70%, ${a*.82})`; gx.beginPath(); gx.arc(q.x, q.y, r, 0, TAU); gx.fill();
       }
       for(const s of stars){ const q = proj({ x:s.x*scaleFactor, y:s.y*scaleFactor, z:s.z*scaleFactor }); gx.fillStyle = `hsla(${hue}, 85%, 65%, ${s.a*visibility})`; gx.fillRect(q.x, q.y, s.s, s.s); }
-      const pulse = 1 + Math.sin(t*A.pulse)*.045; const coreScale = Math.max(0.01, scale*.34*pulse); const coreBright = intro * intro;
+            // Emergency'de lub-dub kalp atışı, diğer modlarda normal nabız
+      let pulse;
+      if(currentMode === 'emergency'){
+        const bt = (t * 1.1) % 1;               // 0..1 arası döngü, ~1.1 Hz
+        const lub = Math.exp(-Math.pow((bt-0.05)/0.06, 2));   // 1. vuruş (lub)
+        const dub = Math.exp(-Math.pow((bt-0.22)/0.05, 2)) * 0.6; // 2. vuruş (dub)
+        pulse = 1 + (lub + dub) * 0.22;
+      } else {
+        pulse = 1 + Math.sin(t*A.pulse)*.045;
+      }
       radial(cxc, cyc, coreScale, [[0, `rgba(255,255,255,${.95*coreBright})`], [.045, `hsla(${hue}, 100%, 75%, ${.75*coreBright})`], [.18, `hsla(${hue}, 95%, 55%, ${.28*coreBright})`], [.55, `hsla(${hue}, 90%, 40%, ${.08*coreBright})`], [1, "rgba(0,0,0,0)"]]);
       const fa = (.42 + .08*Math.sin(t*2.0)) * visibility * scaleFactor; const flareWidth = W * scaleFactor; const fx0 = cxc - flareWidth/2;
       const lg = gx.createLinearGradient(fx0, cyc, fx0+flareWidth, cyc);
@@ -697,7 +706,29 @@ if('serviceWorker' in navigator){
       const coreR = Math.max(.1, scale*.045); const core = ctx.createRadialGradient(cxc, cyc, 0, cxc, cyc, coreR);
       core.addColorStop(0, `rgba(255,255,255,${coreBright})`); core.addColorStop(.22, `hsla(${hue}, 100%, 88%, ${.98*coreBright})`); core.addColorStop(.7, `hsla(${hue}, 90%, 65%, ${.25*coreBright})`); core.addColorStop(1, "rgba(0,0,0,0)");
       ctx.fillStyle = core; ctx.beginPath(); ctx.arc(cxc, cyc, coreR, 0, TAU); ctx.fill();
-      if(currentMode === "protection" && visibility > 0.5){
+            // EMERGENCY: merkezden dışa yayılan sonar halkaları
+      if(currentMode === "emergency" && visibility > 0.5){
+        ctx.globalCompositeOperation = "lighter";
+        const ringCount = 3;
+        const ringCycle = 1.6; // her 1.6 saniyede yeni halka
+        for(let i=0;i<ringCount;i++){
+          const phase = ((t / ringCycle) + i/ringCount) % 1; // 0..1
+          const ringR = phase * Math.min(W,H) * 0.55;
+          const alpha = (1 - phase) * 0.55 * visibility;
+          if(alpha <= 0.01) continue;
+          ctx.strokeStyle = `hsla(48, 100%, 65%, ${alpha})`;
+          ctx.lineWidth = (2.2 - phase * 1.4) * D;
+          ctx.beginPath();
+          ctx.arc(cxc, cyc, ringR, 0, TAU);
+          ctx.stroke();
+          // iç halka (daha soluk, hafif gecikmeli)
+          ctx.strokeStyle = `hsla(48, 100%, 80%, ${alpha * 0.35})`;
+          ctx.lineWidth = 1 * D;
+          ctx.beginPath();
+          ctx.arc(cxc, cyc, ringR * 0.92, 0, TAU);
+          ctx.stroke();
+        }
+      }
         const shieldPulse = (t * 0.8) % 1; const shieldR = shieldPulse * Math.min(W,H) * 0.55; const shieldAlpha = (1 - shieldPulse) * 0.35 * visibility;
         ctx.globalCompositeOperation = "lighter"; ctx.strokeStyle = `hsla(${hue}, 100%, 75%, ${shieldAlpha})`; ctx.lineWidth = 3 * D; ctx.beginPath(); ctx.arc(cxc, cyc, shieldR, 0, TAU); ctx.stroke();
       }

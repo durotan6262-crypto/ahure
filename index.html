@@ -693,7 +693,7 @@ if('serviceWorker' in navigator){
         let dAng = targetAngles[f] - currentFlareAngles[f];
         while(dAng > Math.PI) dAng -= TAU;
         while(dAng < -Math.PI) dAng += TAU;
-        currentFlareAngles[f] += dAng * 0.10 * dt;
+        currentFlareAngles[f] += dAng * 0.16 * dt;
       }
 
       // Her ucu merkezden dışa ayrı çiz
@@ -756,7 +756,7 @@ if('serviceWorker' in navigator){
                               // WORK: Gezegen inceleme (türler + veri kartı + progress bar)
       if(currentMode === 'work' && visibility > 0.5){
         // Yeni gezegen doğur
-        if(workPlanets.length < 2 && t > workNextSpawn){
+          if(workPlanets.length < 2 && t > workNextSpawn && (workPlanets.length === 0 || (t - workPlanets[0].born) > 3)){
           let angle;
           if(workPlanets.length === 0){
             angle = Math.random() * TAU;
@@ -783,7 +783,7 @@ if('serviceWorker' in navigator){
             y: cyc + Math.sin(angle) * dist * 0.85,
             r: pr,
             born: t,
-            life: 9 + Math.random() * 3,
+            life: 14 + Math.random() * 4,
             readProg: 0,
             spawnAngle: angle,
             type: type,

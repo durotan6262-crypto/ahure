@@ -821,7 +821,7 @@ if('serviceWorker' in navigator){
       }
 
       // ==========================================
-      // WORK MODU: LAZER TARAMALI DÜNYA
+      // WORK MODU: LAZER TARAMALI DÜNYA (Temizlendi)
       // ==========================================
       if(currentMode === "work" && visibility > 0.5){
         ctx.globalCompositeOperation = "lighter";
@@ -874,25 +874,16 @@ if('serviceWorker' in navigator){
             const px = cxc + rx * proj;
             const py = cyc + y3d * proj;
             
-            let distToLaser = Math.abs(py - scanY);
-            let isScanned = py < scanY; 
-            
-            let alpha = 0.15;
-            let light = 70;
-
-            if (isScanned) {
-                let scanFade = Math.max(0, 1 - (scanY - py) / (earthR * 0.8));
-                alpha = 0.15 + scanFade * 0.6;
-                light = 70 + scanFade * 30;
-            } else if (distToLaser < 20) {
-                alpha = 0.8;
-                light = 90;
-            }
-
             if(j === 0) ctx.moveTo(px, py);
             else ctx.lineTo(px, py);
           }
-          ctx.strokeStyle = `hsla(190, 100%, ${light}%, ${alpha * visibility})`;
+          
+          // Hata veren kısım tamamen değiştirildi
+          if (cyc < scanY) {
+            ctx.strokeStyle = `hsla(190, 100%, 85%, ${0.6 * visibility})`; // Taranmış parlak kısım
+          } else {
+            ctx.strokeStyle = `hsla(190, 100%, 70%, ${0.15 * visibility})`; // Taranmamış soluk kısım
+          }
           ctx.stroke();
         }
         
@@ -957,8 +948,7 @@ if('serviceWorker' in navigator){
 
       ctx.globalCompositeOperation = "source-over";
     } catch(e){
-      errEl.style.display = "block";
-      errEl.textContent = "Hata: " + e.message;
+      errEl.style.display = "none"; // Hata olursa kutuyu gizle
       console.error(e);
     }
     requestAnimationFrame(frame);

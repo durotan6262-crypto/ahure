@@ -345,6 +345,27 @@ if('serviceWorker' in navigator){
 
   let currentFlareAngles = [0, Math.PI];
 
+  // 3D Hologram için Düğümler (Nodes)
+  let holoNodes = [];
+  const NUM_NODES = 180;
+  const HOLO_RADIUS = 1.0;
+
+  // 3D Düğümleri başlat (Küre içine rastgele dağıtılmış)
+  for(let i = 0; i < NUM_NODES; i++) {
+    const u = Math.random();
+    const v = Math.random();
+    const theta = u * TAU;
+    const phi = Math.acos(2 * v - 1);
+    const r = HOLO_RADIUS * (0.6 + Math.random() * 0.4); // 0.6 - 1.0 arası yarıçap
+
+    holoNodes.push({
+      x: r * Math.sin(phi) * Math.cos(theta),
+      y: r * Math.sin(phi) * Math.sin(theta),
+      z: r * Math.cos(phi),
+      baseRadius: r
+    });
+  }
+
   let AC=null, mg=null, atmoStarted=false, atmoInterval=null;
   function initA(){
     try{
@@ -501,7 +522,7 @@ if('serviceWorker' in navigator){
 
       // Ekran temizleme
       ctx.globalCompositeOperation = "source-over";
-      ctx.fillStyle = "rgba(0,0,3,.30)";
+      ctx.fillStyle = "rgba(0,3,5,.4)"; // Daha koyu arka plan
       ctx.fillRect(0,0,W,H);
 
       const bg = ctx.createRadialGradient(cxc, cyc, 0, cxc, cyc, Math.min(W,H)*.62);
@@ -832,65 +853,122 @@ if('serviceWorker' in navigator){
       }
 
       // ==========================================
-      // WORK MODU: KAOTİK HOLOGRAM (Kırık Lifler & Dışa Taşan Altın Teller)
+      // WORK MODU: 3D ALTIN HOLOGRAM (Ağ Yapısı)
       // ==========================================
       if(currentMode === "work" && visibility > 0.5){
         ctx.globalCompositeOperation = "lighter";
         
         const goldHue = 35; 
-        const time = t * 0.5;
+        const time = t * 0.4; // Dönüş hızı
 
         ctx.save();
         ctx.translate(cxc, cyc);
 
         // 1) MERKEZ ENERJİ KÜRESİ
-        const wCoreR = scale * 0.45;
+        const wCoreR = scale * 0.5;
         const wCoreGlow = ctx.createRadialGradient(0, 0, 0, 0, 0, wCoreR);
-        wCoreGlow.addColorStop(0, `hsla(${goldHue}, 100%, 75%, ${0.8 * visibility})`);
-        wCoreGlow.addColorStop(0.4, `hsla(${goldHue}, 100%, 55%, ${0.4 * visibility})`);
+        wCoreGlow.addColorStop(0, `hsla(${goldHue}, 100%, 75%, ${0.6 * visibility})`);
+        wCoreGlow.addColorStop(0.4, `hsla(${goldHue}, 100%, 55%, ${0.2 * visibility})`);
         wCoreGlow.addColorStop(1, "rgba(0,0,0,0)");
         ctx.fillStyle = wCoreGlow;
         ctx.beginPath(); ctx.arc(0, 0, wCoreR, 0, TAU); ctx.fill();
 
-        // 2) KAOTİK LİFLER VE DIŞA TAŞAN TELLER (Resimdeki gibi)
-        for(let i = 0; i < 80; i++){
-          const seed = i * 1.37;
-          const off = Math.sin(time * 0.8 + seed) * 2.5; 
-          const angle = time * (0.4 + (i % 4) * 0.15) + seed;
+        // 2) 3D DÜĞÜMLERİ DÖNDÜR VE EKRANA YANSIT
+        const projectedNodes = [];
+        for (let i = 0; i < NUM_NODES; i++) {
+          const node = holoNodes[i];
+          // Rotasyon matrisi (X ve Y ekseninde)
+          const cosX = Math.cos(time); const sinX = Math.sin(time);
+          const cosY = Math.cos(time * 0.8); const sinY = Math.sin(time * 0.8);
+
+          // Y ekseninde dön
+          let x1 = node.x * cosY - node.z * sinY;
+          let z1 = node.x * sinY + node.z * cosY;
+          let y1 = node.y;
+
+          // X ekseninde dön
+          let y2 = y1 * cosX - z1 * sinX;
+          let z2 = y1 * sinX + z1 * cosX;
+          let x2 = x1;
+
+          // Ölçeklendir ve ekrana yansıt
+          const scale3D = scale * 1.2;
+          const finalX = x2 * scale3D;
+          const finalY = y2 * scale3D;
+          const finalZ = z2; // Derinlik (-1 ile 1 arası)
+
+          // 3D perspektif hissi
+          const pFactor = 1 + finalZ * 0.5;
           
-          // Liflerin boyu (bazıları içeride, bazıları çok dışarıda)
-          const rBase = scale * (0.5 + Math.sin(seed * 3) * 0.6);
-          const rIn = scale * (0.15 + Math.abs(Math.cos(seed * 2)) * 0.35);
+          projectedNodes.push({
+            x: finalX * pFactor,
+            y: finalY * pFactor,
+            z: finalZ,
+            size: (0.5 + (finalZ + 1) * 0.5) * 2.5 // Öne gelenler daha büyük
+          });
+        }
+
+        // 3) DÜĞÜMLERİ BİRBİRİNE BAĞLA (Teller)
+        ctx.lineWidth = 1 * scaleFactor;
+        for (let i = 0; i < NUM_NODES; i++) {
+          const n1 = projectedNodes[i];
+          const origN1 = holoNodes[i];
           
-          // Başlangıç ve bitiş (dışa doğru uzayan)
-          const startX = Math.cos(angle + off) * rBase;
-          const startY = Math.sin(angle + off) * rBase * 0.8;
-          const endX = Math.cos(angle + Math.PI + off * 0.5) * (rBase + scale * 0.4);
-          const endY = Math.sin(angle + Math.PI + off * 0.5) * (rBase + scale * 0.4) * 0.8;
+          for (let j = i + 1; j < NUM_NODES; j++) {
+            const n2 = projectedNodes[j];
+            const origN2 = holoNodes[j];
 
-          // İçeri doğru kıvrılan kontrol noktaları
-          const cp1x = Math.cos(angle + 1.5) * rIn;
-          const cp1y = Math.sin(angle + 1.5) * rIn * 0.8;
-          const cp2x = Math.cos(angle - 1.2) * rIn;
-          const cp2y = Math.sin(angle - 1.2) * rIn * 0.8;
+            // 3D uzaydaki gerçek mesafeyi bul (yakın olanları bağla)
+            const dx = origN1.x - origN2.x;
+            const dy = origN1.y - origN2.y;
+            const dz = origN1.z - origN2.z;
+            const dist3D = Math.sqrt(dx*dx + dy*dy + dz*dz);
 
-          // Kesikli çizgi efekti (kırık teller)
-          const alpha = 0.15 + Math.abs(Math.sin(time * 3 + seed)) * 0.6;
-          ctx.strokeStyle = `hsla(${goldHue + (i%3)*8}, 100%, 60%, ${alpha * visibility})`;
-          ctx.lineWidth = (0.4 + Math.sin(seed)*0.8) * scaleFactor;
+            // Mesafe eşiği (ağın yoğunluğunu belirler)
+            if (dist3D < 0.25) {
+              const alpha = (1 - dist3D / 0.25) * 0.8 * visibility;
+              // Derinlik hissi (arkadakiler daha sönük)
+              const depthAlpha = alpha * (0.3 + (n1.z + 1) * 0.35);
+              
+              // Bazı teller kopuk/kesik olsun
+              if ((i + j) % 7 === 0) {
+                ctx.setLineDash([scale*0.05, scale*0.05]);
+              } else {
+                ctx.setLineDash([]);
+              }
+
+              ctx.strokeStyle = `hsla(${goldHue}, 100%, ${50 + n1.z * 20}%, ${depthAlpha})`;
+              ctx.beginPath();
+              ctx.moveTo(n1.x, n1.y);
+              ctx.lineTo(n2.x, n2.y);
+              ctx.stroke();
+            }
+          }
+        }
+        ctx.setLineDash([]);
+
+        // 4) DIŞA TAŞAN KIRIK TELLER (Spikes)
+        for (let i = 0; i < 30; i++) {
+          // Sadece dış kabuktaki (z > 0) noktalardan seç
+          const nodeIndex = Math.floor(Math.random() * NUM_NODES);
+          const node = projectedNodes[nodeIndex];
           
-          ctx.setLineDash([scale*0.15, scale*0.08]); // Uzun ve kırık
-          ctx.lineDashOffset = -time * 30; 
+          if (node.z > 0.5 && Math.random() < 0.8) {
+            const angle = Math.atan2(node.y, node.x);
+            const len = scale * (0.1 + Math.random() * 0.2);
+            const endX = node.x + Math.cos(angle) * len;
+            const endY = node.y + Math.sin(angle) * len;
 
-          ctx.beginPath();
-          ctx.moveTo(startX, startY);
-          ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, endX, endY);
-          ctx.stroke();
+            ctx.strokeStyle = `hsla(${goldHue}, 100%, 75%, ${0.6 * visibility})`;
+            ctx.lineWidth = 1.5 * scaleFactor;
+            ctx.setLineDash([scale*0.1, scale*0.08]); // Kırık görünüm
+            ctx.beginPath();
+            ctx.moveTo(node.x, node.y);
+            ctx.lineTo(endX, endY);
+            ctx.stroke();
 
-          // Liflerin uçlarındaki "elektrik yüklü" parlak noktalar
-          if (i % 3 === 0) {
-            ctx.setLineDash([]); // Nokta için düz çizgi
-            ctx.fillStyle = `hsla(${goldHue}, 100%, 85%, ${alpha * 1.5 * visibility})`;
+            // Telin ucunda parlayan toz
+            ctx.fillStyle = `hsla(${goldHue}, 100%, 90%, ${0.8 * visibility})`;
             ctx.beginPath();
             ctx.arc(endX, endY, 1.5 * scaleFactor, 0, TAU);
             ctx.fill();
@@ -898,34 +976,20 @@ if('serviceWorker' in navigator){
         }
         ctx.setLineDash([]);
 
-        // 3) İÇ İÇE GEÇMİŞ HALKALAR (Hacim hissi için)
-        for(let i = 0; i < 15; i++){
-          const seed = i * 4.1;
-          const rot = time * (0.5 + (i%2)*0.3) + seed;
-          const rx = scale * (0.5 + Math.sin(seed)*0.3);
-          const ry = scale * (0.2 + Math.cos(seed)*0.2);
+        // 5) DÜĞÜMLERİ ÇİZ (Parlayan Noktalar)
+        for (let i = 0; i < NUM_NODES; i++) {
+          const node = projectedNodes[i];
+          const alpha = (node.z + 1) * 0.5; // Arkadakiler daha sönük
           
-          ctx.strokeStyle = `hsla(${goldHue}, 100%, 70%, ${0.1 * visibility})`;
-          ctx.lineWidth = 0.8 * scaleFactor;
+          ctx.fillStyle = `hsla(${goldHue}, 100%, 85%, ${alpha * visibility})`;
           ctx.beginPath();
-          ctx.ellipse(0, 0, rx, ry, rot, 0, TAU);
-          ctx.stroke();
-        }
+          ctx.arc(node.x, node.y, node.size * scaleFactor, 0, TAU);
+          ctx.fill();
 
-        // 4) DIŞA SAVRULAN PARÇACIKLAR
-        for(let i = 0; i < 60; i++){
-          const seed = i * 7.7;
-          const r = scale * (0.6 + Math.sin(time * 1.2 + seed) * 0.7);
-          const a = time * 0.4 + seed;
-          
-          const px = Math.cos(a) * r;
-          const py = Math.sin(a) * r * 0.8;
-          
-          const pAlpha = Math.abs(Math.sin(time * 4 + seed)) * 0.8;
-          
-          ctx.fillStyle = `hsla(${goldHue}, 100%, 90%, ${pAlpha * visibility})`;
+          // Işık halesi
+          ctx.fillStyle = `hsla(${goldHue}, 100%, 60%, ${alpha * 0.3 * visibility})`;
           ctx.beginPath();
-          ctx.arc(px, py, (0.8 + Math.abs(Math.cos(seed))) * scaleFactor, 0, TAU);
+          ctx.arc(node.x, node.y, node.size * 2.5 * scaleFactor, 0, TAU);
           ctx.fill();
         }
 

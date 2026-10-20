@@ -602,6 +602,46 @@ if('serviceWorker' in navigator){
         gx.stroke();
       }
 
+            // YENİ: Kaotik Enerji Ağları (Visör)
+      gx.globalCompositeOperation = "lighter";
+      
+      // İç içe geçmiş, dönen ışık şeritleri
+      for(let i = 0; i < 30; i++){
+        const baseR = scale * (0.4 + Math.random() * 0.7);
+        const angle = (i / 30) * TAU + t * (0.5 + Math.random() * 1.5);
+        const wobble = Math.sin(t * 2 + i) * 0.3;
+        
+        // Şeridin başlangıç ve bitiş noktaları
+        const x0 = cxc + Math.cos(angle) * baseR;
+        const y0 = cyc + Math.sin(angle) * baseR;
+        
+        // Şeridin kıvrımları (Kontrol noktaları)
+        const cp1x = cxc + Math.cos(angle + wobble) * (baseR * 0.5);
+        const cp1y = cyc + Math.sin(angle + wobble) * (baseR * 0.5);
+        const cp2x = cxc + Math.cos(angle - wobble) * (baseR * 1.2);
+        const cp2y = cyc + Math.sin(angle - wobble) * (baseR * 1.2);
+        const x1 = cxc + Math.cos(angle + Math.PI * 0.8) * baseR;
+        const y1 = cyc + Math.sin(angle + Math.PI * 0.8) * baseR;
+
+        gx.strokeStyle = `hsla(${hue}, 100%, ${60 + Math.random()*20}%, ${0.1 + Math.random() * 0.25})`;
+        gx.lineWidth = (0.5 + Math.random() * 1.5) * scaleFactor;
+        gx.beginPath();
+        gx.moveTo(x0, y0);
+        gx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, x1, y1);
+        gx.stroke();
+      }
+
+      // Çok ince, spiral halkalar (daha yoğun görünüm için)
+      for(let i = 0; i < 10; i++){
+        const r = scale * (0.3 + i * 0.08);
+        const rot = t * (0.8 + i * 0.2) * (i % 2 === 0 ? 1 : -1);
+        gx.strokeStyle = `hsla(${hue}, 100%, 80%, ${0.15})`;
+        gx.lineWidth = 1 * scaleFactor;
+        gx.beginPath();
+        gx.ellipse(cxc, cyc, r, r * (0.6 + Math.sin(t+i)*0.2), rot, 0, TAU);
+        gx.stroke();
+      }
+
       gx.lineWidth = .65*Math.max(0.1, scaleFactor);
       for(let i=0;i<pts.length;i++){
         const A_ = pts[i];
@@ -753,10 +793,10 @@ if('serviceWorker' in navigator){
       ctx.fillStyle = core;
       ctx.beginPath(); ctx.arc(cxc, cyc, coreR, 0, TAU); ctx.fill();
       
-                              // WORK: Gezegen inceleme (türler + veri kartı + progress bar)
+                                    // WORK: Gezegen inceleme (sadece görsel, UI yok)
       if(currentMode === 'work' && visibility > 0.5){
         // Yeni gezegen doğur
-          if(workPlanets.length < 2 && t > workNextSpawn && (workPlanets.length === 0 || (t - workPlanets[0].born) > 3)){
+        if(workPlanets.length < 2 && t > workNextSpawn && (workPlanets.length === 0 || (t - workPlanets[0].born) > 3)){
           let angle;
           if(workPlanets.length === 0){
             angle = Math.random() * TAU;
@@ -839,7 +879,7 @@ if('serviceWorker' in navigator){
           planet.readProg += dt * (isAimed ? 0.030 : 0.005);
         }
 
-        // Absorbsiyon parçacıklarını doğur (son %25'te)
+        // Absorbsiyon parçacıklarını doğur
         for(const planet of workPlanets){
           const age = t - planet.born;
           if(age > planet.life * 0.75 && Math.random() < 0.5){
@@ -856,7 +896,7 @@ if('serviceWorker' in navigator){
           }
         }
 
-        // Ölen gezegenleri çıkar (readProg dolduysa veya yaş bittiyse)
+        // Ölen gezegenleri çıkar
         for(let i = workPlanets.length - 1; i >= 0; i--){
           const p = workPlanets[i];
           if(p.readProg >= 1 || (t - p.born) >= p.life){
@@ -865,7 +905,7 @@ if('serviceWorker' in navigator){
           }
         }
 
-        // Her gezegeni çiz
+        // Her gezegeni çiz (Kart ve Bar YOK)
         for(const planet of workPlanets){
           const age = t - planet.born;
           let lifeAlpha = 1;
@@ -954,138 +994,6 @@ if('serviceWorker' in navigator){
           hitGrad.addColorStop(1, `hsla(${pHue}, 100%, 60%, 0)`);
           ctx.fillStyle = hitGrad;
           ctx.beginPath(); ctx.arc(hitX, hitY, pr * 0.85, 0, TAU); ctx.fill();
-
-          // 7) Progress bar (gezegenin altında)
-          const barW = pr * 2.2;
-          const barH = 3 * D;
-          const barX = px - barW/2;
-          const barY = py + pr + 7 * D;
-          ctx.globalCompositeOperation = "source-over";
-          ctx.fillStyle = `rgba(80, 200, 255, ${0.16 * lifeAlpha})`;
-          ctx.fillRect(barX, barY, barW, barH);
-          const fillW = barW * Math.min(1, planet.readProg);
-          const barGrad = ctx.createLinearGradient(barX, 0, barX + barW, 0);
-          barGrad.addColorStop(0, `hsla(${pHue}, 100%, 55%, ${0.9 * lifeAlpha})`);
-          barGrad.addColorStop(1, `hsla(${pHue}, 100%, 78%, ${0.95 * lifeAlpha})`);
-          ctx.fillStyle = barGrad;
-          ctx.fillRect(barX, barY, fillW, barH);
-
-          // 8) Veri kartı (hedeflendiğinde ve okuma başladıysa)
-          const cardAlpha = Math.min(1, planet.readProg * 5) * Math.min(1, (1 - planet.readProg) * 5) * lifeAlpha;
-          if(cardAlpha > 0.05){
-            const scaleUI = Math.min(W,H) / 800;
-            const cardW = 132 * scaleUI;
-            const cardH = 80 * scaleUI;
-            const padding = 9 * scaleUI;
-            const fs = 10.5 * scaleUI;
-            const fsSmall = 9.5 * scaleUI;
-
-            let cardX = px + pr + 14 * scaleUI;
-            if(cardX + cardW > W - 14 * scaleUI){
-              cardX = px - pr - 14 * scaleUI - cardW;
-            }
-            let cardY = py - cardH / 2;
-            if(cardY < 100) cardY = 100;
-            if(cardY + cardH > H - 14 * scaleUI) cardY = H - 14 * scaleUI - cardH;
-
-            // Arka plan
-            ctx.fillStyle = `rgba(0, 10, 22, ${0.82 * cardAlpha})`;
-            const rr = 6 * scaleUI;
-            ctx.beginPath();
-            ctx.moveTo(cardX + rr, cardY);
-            ctx.arcTo(cardX + cardW, cardY, cardX + cardW, cardY + cardH, rr);
-            ctx.arcTo(cardX + cardW, cardY + cardH, cardX, cardY + cardH, rr);
-            ctx.arcTo(cardX, cardY + cardH, cardX, cardY, rr);
-            ctx.arcTo(cardX, cardY, cardX + cardW, cardY, rr);
-            ctx.closePath();
-            ctx.fill();
-
-            // Kenar
-            ctx.strokeStyle = `hsla(${pHue}, 90%, 70%, ${0.75 * cardAlpha})`;
-            ctx.lineWidth = 1;
-            ctx.stroke();
-
-            // Üst şerit
-            ctx.fillStyle = `hsla(${pHue}, 90%, 70%, ${0.95 * cardAlpha})`;
-            ctx.fillRect(cardX, cardY, cardW, 1.5 * scaleUI);
-
-            // Metin
-            ctx.font = `${fs}px 'Courier New', monospace`;
-            ctx.textBaseline = 'top';
-            ctx.fillStyle = `hsla(${pHue}, 100%, 82%, ${cardAlpha})`;
-            ctx.fillText('▸ GEZEGEN-' + planet.id, cardX + padding, cardY + padding);
-
-            ctx.font = `${fsSmall}px 'Courier New', monospace`;
-            ctx.fillStyle = `rgba(200, 230, 255, ${0.92 * cardAlpha})`;
-            ctx.fillText('Tür:      ' + type.label,            cardX + padding, cardY + padding + fs * 1.6);
-            ctx.fillText('Kütle:    ' + planet.data.mass + ' M⊕', cardX + padding, cardY + padding + fs * 3.0);
-            ctx.fillText('Sıcaklık: ' + planet.data.temp + '°C',  cardX + padding, cardY + padding + fs * 4.4);
-            ctx.fillText('Manyetik: ' + planet.data.mag + ' T',   cardX + padding, cardY + padding + fs * 5.8);
-
-            // OKUNUYOR göstergesi
-            if(planet._aimed){
-              ctx.fillStyle = `hsla(120, 100%, 70%, ${cardAlpha})`;
-              ctx.font = `${fsSmall - 1}px 'Courier New', monospace`;
-              ctx.fillText('● OKUNUYOR', cardX + cardW - padding - 62 * scaleUI, cardY + padding);
-            }
-          }
-        }
-      }
-
-      // Absorbsiyon parçacıkları (her modda temizlenir)
-      if(workAbsorbParticles.length > 0){
-        ctx.globalCompositeOperation = "lighter";
-        for(let i = workAbsorbParticles.length - 1; i >= 0; i--){
-          const ap = workAbsorbParticles[i];
-          const age = t - ap.born;
-          if(age > ap.life){
-            workAbsorbParticles.splice(i, 1);
-            continue;
-          }
-          const prog = age / ap.life;
-          const ex = ap.x + (ap.tx - ap.x) * prog;
-          const ey = ap.y + (ap.ty - ap.y) * prog;
-          const alpha = (1 - prog) * visibility;
-          const size = ap.size * (1 - prog * 0.4);
-          ctx.fillStyle = `hsla(${hue}, 100%, 82%, ${alpha})`;
-          ctx.beginPath(); ctx.arc(ex, ey, size * D, 0, TAU); ctx.fill();
-          ctx.fillStyle = `hsla(${hue}, 100%, 65%, ${alpha * 0.5})`;
-          ctx.beginPath(); ctx.arc(ex, ey, size * 2.2 * D, 0, TAU); ctx.fill();
-        }
-      }
-
-      // Çarpışma efektleri
-      if(workEffects.length > 0){
-        ctx.globalCompositeOperation = "lighter";
-        for(let i = workEffects.length - 1; i >= 0; i--){
-          const ef = workEffects[i];
-          const age = t - ef.born;
-          if(age > ef.life){
-            workEffects.splice(i, 1);
-            continue;
-          }
-          const prog = age / ef.life;
-          const rr = ef.r * prog;
-          const alpha = (1 - prog) * visibility;
-
-          ctx.strokeStyle = `hsla(${hue}, 100%, 85%, ${alpha})`;
-          ctx.lineWidth = 3 * (1 - prog) * D;
-          ctx.beginPath(); ctx.arc(ef.x, ef.y, rr, 0, TAU); ctx.stroke();
-
-          ctx.strokeStyle = `hsla(${hue}, 100%, 95%, ${alpha * 0.6})`;
-          ctx.lineWidth = 1.5 * (1 - prog) * D;
-          ctx.beginPath(); ctx.arc(ef.x, ef.y, rr * 0.7, 0, TAU); ctx.stroke();
-
-          if(prog < 0.35){
-            const fp = prog / 0.35;
-            const fr = ef.r * 0.6 * (1 - fp);
-            const fg = ctx.createRadialGradient(ef.x, ef.y, 0, ef.x, ef.y, fr);
-            fg.addColorStop(0, `rgba(255,255,255,${(1-fp) * visibility})`);
-            fg.addColorStop(0.5, `hsla(${hue}, 100%, 70%, ${(1-fp) * 0.6 * visibility})`);
-            fg.addColorStop(1, `hsla(${hue}, 100%, 50%, 0)`);
-            ctx.fillStyle = fg;
-            ctx.beginPath(); ctx.arc(ef.x, ef.y, fr, 0, TAU); ctx.fill();
-          }
         }
       }
 

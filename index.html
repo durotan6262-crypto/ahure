@@ -341,17 +341,18 @@ if('serviceWorker' in navigator){
 
   let currentFlareAngles = [0, Math.PI];
 
-  // 3D Hologram için Düğümler
   let holoNodes = [];
-  const NUM_NODES = 180;
+  const NUM_NODES = 250; // Düğüm sayısını artırdım ki merkez daha sık olsun
   const HOLO_RADIUS = 1.0;
 
+  // 3D Düğümleri başlat (MERKEZE YOĞUNLAŞTIRILMIŞ)
   for(let i = 0; i < NUM_NODES; i++) {
     const u = Math.random();
     const v = Math.random();
     const theta = u * TAU;
     const phi = Math.acos(2 * v - 1);
-    const r = HOLO_RADIUS * (0.6 + Math.random() * 0.4); 
+    // Math.pow(..., 2) kullanarak düğümleri merkeze (0'a) doğru çekiyoruz
+    const r = HOLO_RADIUS * Math.pow(Math.random(), 2.5); 
 
     holoNodes.push({
       x: r * Math.sin(phi) * Math.cos(theta),
@@ -841,22 +842,21 @@ if('serviceWorker' in navigator){
       }
 
       // ==========================================
-      // WORK MODU: BAKIR TEL ÖRGÜ (En Gerçekçi Simülasyon)
+      // WORK MODU: MERKEZE YOĞUNLAŞAN BAKIR TEL ÖRGÜ
       // ==========================================
       if(currentMode === "work" && visibility > 0.5){
         ctx.globalCompositeOperation = "lighter";
         
-        // Sadece çok yavaş bir nefes alma (dönüş yok)
         const time = t * 0.05; 
 
         ctx.save();
         ctx.translate(cxc, cyc);
 
-        // 1) MERKEZ ENERJİ KÜRESİ (Bakır tonlarında)
-        const wCoreR = scale * 0.5;
+        // 1) MERKEZ ENERJİ KÜRESİ (Daha büyük ve parlak)
+        const wCoreR = scale * 0.6;
         const wCoreGlow = ctx.createRadialGradient(0, 0, 0, 0, 0, wCoreR);
-        wCoreGlow.addColorStop(0, `hsla(25, 100%, 65%, ${0.8 * visibility})`);
-        wCoreGlow.addColorStop(0.5, `hsla(15, 100%, 45%, ${0.4 * visibility})`);
+        wCoreGlow.addColorStop(0, `hsla(25, 100%, 70%, ${0.9 * visibility})`);
+        wCoreGlow.addColorStop(0.5, `hsla(15, 100%, 50%, ${0.5 * visibility})`);
         wCoreGlow.addColorStop(1, "rgba(0,0,0,0)");
         ctx.fillStyle = wCoreGlow;
         ctx.beginPath(); ctx.arc(0, 0, wCoreR, 0, TAU); ctx.fill();
@@ -891,7 +891,7 @@ if('serviceWorker' in navigator){
           });
         }
 
-        // 3) KIRIK VE BONCUKLU TELLER (Bakır Rengi, Aşırı İnce)
+        // 3) KIRIK VE BONCUKLU TELLER
         for (let i = 0; i < NUM_NODES; i++) {
           const n1 = projectedNodes[i];
           const origN1 = holoNodes[i];
@@ -906,17 +906,15 @@ if('serviceWorker' in navigator){
             const dist3D = Math.sqrt(dx*dx + dy*dy + dz*dz);
 
             if (dist3D < 0.35) {
-              const depthAlpha = (1 - dist3D / 0.35) * (0.2 + (n1.z + 1) * 0.6) * visibility;
+              // Yoğunluk arttığı için alfa değerini biraz düşürdük ki merkez çok beyazlamasın
+              const depthAlpha = (1 - dist3D / 0.35) * (0.2 + (n1.z + 1) * 0.6) * visibility * 0.8;
               
-              // Bakır / Altın rengi
               const hueShift = Math.sin(i * 1.5 + j * 0.8) * 15; 
               ctx.strokeStyle = `hsla(${25 + hueShift}, 80%, 55%, ${depthAlpha})`;
               
-              // Aşırı ince çizgiler
               const lineW = 0.2 + ((i * j) % 10) / 10 * 0.4;
               ctx.lineWidth = lineW * scaleFactor; 
 
-              // --- KIRIK ÇİZGİ VE BONCUK MANTIĞI ---
               let startX = n1.x, startY = n1.y;
               let endX = n2.x, endY = n2.y;
               
@@ -928,7 +926,6 @@ if('serviceWorker' in navigator){
               for(let s = 1; s < segments; s++) {
                   const tSeg = s / segments;
                   
-                  // Testere dişi gibi keskin kırılmalar
                   const jitterAmt = scale * 0.06; 
                   const jx = Math.sin(i * 12.3 + j * 4.5 + s * 7.1) * jitterAmt;
                   const jy = Math.cos(i * 3.2 + j * 8.7 + s * 2.4) * jitterAmt;
@@ -938,7 +935,6 @@ if('serviceWorker' in navigator){
                   
                   ctx.lineTo(px, py);
 
-                  // Resimdeki gibi tellerin üzerinde parlak bakır damlalar/boncuklar
                   if ((i + j + s) % 2 === 0) {
                       ctx.fillStyle = `hsla(${25 + hueShift}, 100%, 75%, ${depthAlpha * 1.5})`;
                       ctx.beginPath();
@@ -953,7 +949,7 @@ if('serviceWorker' in navigator){
           }
         }
 
-        // 4) ANA DÜĞÜMLER (Keskin)
+        // 4) ANA DÜĞÜMLER
         for (let i = 0; i < NUM_NODES; i++) {
           const node = projectedNodes[i];
           const alpha = (node.z + 1) * 0.5; 

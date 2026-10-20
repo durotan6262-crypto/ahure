@@ -341,18 +341,18 @@ if('serviceWorker' in navigator){
 
   let currentFlareAngles = [0, Math.PI];
 
+  // YOĞUNLUK VE PERFORMANS DENGESİ
   let holoNodes = [];
-  const NUM_NODES = 250; // Düğüm sayısını artırdım ki merkez daha sık olsun
+  const NUM_NODES = 150; // Kasmayı önlemek için 180'den 150'ye düşürdük
   const HOLO_RADIUS = 1.0;
 
-  // 3D Düğümleri başlat (MERKEZE YOĞUNLAŞTIRILMIŞ)
   for(let i = 0; i < NUM_NODES; i++) {
     const u = Math.random();
     const v = Math.random();
     const theta = u * TAU;
     const phi = Math.acos(2 * v - 1);
-    // Math.pow(..., 2) kullanarak düğümleri merkeze (0'a) doğru çekiyoruz
-    const r = HOLO_RADIUS * Math.pow(Math.random(), 2.5); 
+    // 1.4 değeri merkeze doğru hafif bir çekim uygular (kasmasız)
+    const r = HOLO_RADIUS * Math.pow(Math.random(), 1.4); 
 
     holoNodes.push({
       x: r * Math.sin(phi) * Math.cos(theta),
@@ -852,11 +852,11 @@ if('serviceWorker' in navigator){
         ctx.save();
         ctx.translate(cxc, cyc);
 
-        // 1) MERKEZ ENERJİ KÜRESİ (Daha büyük ve parlak)
-        const wCoreR = scale * 0.6;
+        // 1) MERKEZ ENERJİ KÜRESİ
+        const wCoreR = scale * 0.5;
         const wCoreGlow = ctx.createRadialGradient(0, 0, 0, 0, 0, wCoreR);
-        wCoreGlow.addColorStop(0, `hsla(25, 100%, 70%, ${0.9 * visibility})`);
-        wCoreGlow.addColorStop(0.5, `hsla(15, 100%, 50%, ${0.5 * visibility})`);
+        wCoreGlow.addColorStop(0, `hsla(25, 100%, 65%, ${0.8 * visibility})`);
+        wCoreGlow.addColorStop(0.5, `hsla(15, 100%, 45%, ${0.4 * visibility})`);
         wCoreGlow.addColorStop(1, "rgba(0,0,0,0)");
         ctx.fillStyle = wCoreGlow;
         ctx.beginPath(); ctx.arc(0, 0, wCoreR, 0, TAU); ctx.fill();
@@ -891,7 +891,7 @@ if('serviceWorker' in navigator){
           });
         }
 
-        // 3) KIRIK VE BONCUKLU TELLER
+        // 3) KIRIK VE BONCUKLU TELLER (Hafif merkeze yoğun)
         for (let i = 0; i < NUM_NODES; i++) {
           const n1 = projectedNodes[i];
           const origN1 = holoNodes[i];
@@ -905,9 +905,9 @@ if('serviceWorker' in navigator){
             const dz = origN1.z - origN2.z;
             const dist3D = Math.sqrt(dx*dx + dy*dy + dz*dz);
 
-            if (dist3D < 0.35) {
-              // Yoğunluk arttığı için alfa değerini biraz düşürdük ki merkez çok beyazlamasın
-              const depthAlpha = (1 - dist3D / 0.35) * (0.2 + (n1.z + 1) * 0.6) * visibility * 0.8;
+            // Kasma yapmaması için eşik 0.28'e çekildi
+            if (dist3D < 0.28) {
+              const depthAlpha = (1 - dist3D / 0.28) * (0.2 + (n1.z + 1) * 0.6) * visibility * 0.8;
               
               const hueShift = Math.sin(i * 1.5 + j * 0.8) * 15; 
               ctx.strokeStyle = `hsla(${25 + hueShift}, 80%, 55%, ${depthAlpha})`;

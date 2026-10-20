@@ -522,7 +522,7 @@ if('serviceWorker' in navigator){
 
       // Ekran temizleme
       ctx.globalCompositeOperation = "source-over";
-      ctx.fillStyle = "rgba(0,3,5,.4)"; // Daha koyu arka plan
+      ctx.fillStyle = "rgba(0,3,5,.4)"; 
       ctx.fillRect(0,0,W,H);
 
       const bg = ctx.createRadialGradient(cxc, cyc, 0, cxc, cyc, Math.min(W,H)*.62);
@@ -942,37 +942,7 @@ if('serviceWorker' in navigator){
           }
         }
 
-        // 4) DIŞA TAŞAN DÜZ VE KESKİN TELLER (Kaotik Görünüm)
-        for (let i = 0; i < 50; i++) {
-          const nodeIndex = Math.floor(Math.random() * NUM_NODES);
-          const node = projectedNodes[nodeIndex];
-          
-          // Rastgele bir açıda dışarı doğru düz bir çizgi
-          const angle = Math.random() * TAU;
-          const len = scale * (0.05 + Math.random() * 0.3); // Rastgele uzunluklar
-          const endX = node.x + Math.cos(angle) * len;
-          const endY = node.y + Math.sin(angle) * len;
-
-          const alpha = (node.z + 1) * 0.5 * visibility;
-          
-          // Glow (Kalın)
-          ctx.strokeStyle = `hsla(${goldHue}, 100%, 65%, ${alpha * 0.5})`;
-          ctx.lineWidth = 2 * scaleFactor;
-          ctx.beginPath();
-          ctx.moveTo(node.x, node.y);
-          ctx.lineTo(endX, endY);
-          ctx.stroke();
-
-          // Core (İnce Keskin)
-          ctx.strokeStyle = `hsla(${goldHue}, 100%, 90%, ${alpha})`;
-          ctx.lineWidth = 0.8 * scaleFactor;
-          ctx.beginPath();
-          ctx.moveTo(node.x, node.y);
-          ctx.lineTo(endX, endY);
-          ctx.stroke();
-        }
-
-        // 5) DÜĞÜMLERİ ÇİZ (Parlayan Noktalar)
+        // 4) DÜĞÜMLERİ ÇİZ (Keskin, Halesiz Noktalar)
         for (let i = 0; i < NUM_NODES; i++) {
           const node = projectedNodes[i];
           const alpha = (node.z + 1) * 0.5; 
@@ -980,11 +950,6 @@ if('serviceWorker' in navigator){
           ctx.fillStyle = `hsla(${goldHue}, 100%, 85%, ${alpha * visibility})`;
           ctx.beginPath();
           ctx.arc(node.x, node.y, node.size * scaleFactor, 0, TAU);
-          ctx.fill();
-
-          ctx.fillStyle = `hsla(${goldHue}, 100%, 60%, ${alpha * 0.3 * visibility})`;
-          ctx.beginPath();
-          ctx.arc(node.x, node.y, node.size * 2.5 * scaleFactor, 0, TAU);
           ctx.fill();
         }
 

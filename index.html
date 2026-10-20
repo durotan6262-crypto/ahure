@@ -29,7 +29,7 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;background:#0
 #modes button.on{
   background:rgba(80,200,255,.4);
   border-color:#7ce;
-  box-shadow:0 0 20px rgba(80,200,255,.7);
+  /* Buton etrafındaki parlama (box-shadow) kaldırıldı */
 }
 #modes button img{
   width:26px;height:26px;
@@ -853,13 +853,13 @@ if('serviceWorker' in navigator){
       }
 
       // ==========================================
-      // WORK MODU: 3D ALTIN HOLOGRAM (Ağ Yapısı)
+      // WORK MODU: 3D ALTIN HOLOGRAM (Düz, Belirgin ve Kaotik)
       // ==========================================
       if(currentMode === "work" && visibility > 0.5){
         ctx.globalCompositeOperation = "lighter";
         
         const goldHue = 35; 
-        const time = t * 0.4; // Dönüş hızı
+        const time = t * 0.4; 
 
         ctx.save();
         ctx.translate(cxc, cyc);
@@ -877,38 +877,33 @@ if('serviceWorker' in navigator){
         const projectedNodes = [];
         for (let i = 0; i < NUM_NODES; i++) {
           const node = holoNodes[i];
-          // Rotasyon matrisi (X ve Y ekseninde)
           const cosX = Math.cos(time); const sinX = Math.sin(time);
           const cosY = Math.cos(time * 0.8); const sinY = Math.sin(time * 0.8);
 
-          // Y ekseninde dön
           let x1 = node.x * cosY - node.z * sinY;
           let z1 = node.x * sinY + node.z * cosY;
           let y1 = node.y;
 
-          // X ekseninde dön
           let y2 = y1 * cosX - z1 * sinX;
           let z2 = y1 * sinX + z1 * cosX;
           let x2 = x1;
 
-          // Ölçeklendir ve ekrana yansıt
           const scale3D = scale * 1.2;
           const finalX = x2 * scale3D;
           const finalY = y2 * scale3D;
-          const finalZ = z2; // Derinlik (-1 ile 1 arası)
+          const finalZ = z2; 
 
-          // 3D perspektif hissi
           const pFactor = 1 + finalZ * 0.5;
           
           projectedNodes.push({
             x: finalX * pFactor,
             y: finalY * pFactor,
             z: finalZ,
-            size: (0.5 + (finalZ + 1) * 0.5) * 2.5 // Öne gelenler daha büyük
+            size: (0.5 + (finalZ + 1) * 0.5) * 2.5 
           });
         }
 
-                        // 3) DÜĞÜMLERİ BİRBİRİNE BAĞLA (Canlı ve Gerçekçi Teller)
+        // 3) DÜĞÜMLERİ BİRBİRİNE BAĞLA (Düz, Belirgin, Kaotik Çizgiler)
         for (let i = 0; i < NUM_NODES; i++) {
           const n1 = projectedNodes[i];
           const origN1 = holoNodes[i];
@@ -917,41 +912,28 @@ if('serviceWorker' in navigator){
             const n2 = projectedNodes[j];
             const origN2 = holoNodes[j];
 
-            // 3D uzaydaki gerçek mesafeyi bul (yakın olanları bağla)
             const dx = origN1.x - origN2.x;
             const dy = origN1.y - origN2.y;
             const dz = origN1.z - origN2.z;
             const dist3D = Math.sqrt(dx*dx + dy*dy + dz*dz);
 
-            // Mesafe eşiği
-            if (dist3D < 0.28) { // Biraz daha uzaktaki telleri de ekle
-              // Derinliğe göre parlaklık (öndekiler daha parlak)
-              const depthAlpha = (1 - dist3D / 0.28) * (0.15 + (n1.z + 1) * 0.4) * visibility;
+            // Kaotik hissiyat için mesafe eşiğini geniş tuttuk
+            if (dist3D < 0.35) {
+              const depthAlpha = (1 - dist3D / 0.35) * (0.2 + (n1.z + 1) * 0.5) * visibility;
               
-              // Her telin uçları arasında renk geçişi (Gradient) oluştur
-              const grad = ctx.createLinearGradient(n1.x, n1.y, n2.x, n2.y);
-              // Zamanla hafifçe parlayan altın rengi
               const currentHue = goldHue + Math.sin(time * 2 + i) * 10; 
-              grad.addColorStop(0, `hsla(${currentHue}, 100%, 65%, ${depthAlpha})`);
-              grad.addColorStop(1, `hsla(${currentHue}, 100%, 85%, ${depthAlpha})`);
 
-              // --- A) DIŞ GLOW (Geniş ve Soluk) ---
-              ctx.strokeStyle = `hsla(${currentHue}, 100%, 60%, ${depthAlpha * 0.3})`;
-              // Öndeki teller daha kalın
-              ctx.lineWidth = (1.5 + (n1.z + 1) * 1.5) * scaleFactor; 
+              // A) Dış Glow (Tellerin etrafındaki altın halesi - Belirginlik için)
+              ctx.strokeStyle = `hsla(${currentHue}, 100%, 60%, ${depthAlpha * 0.4})`;
+              ctx.lineWidth = (1.5 + (n1.z + 1) * 2) * scaleFactor; 
               ctx.beginPath();
               ctx.moveTo(n1.x, n1.y);
               ctx.lineTo(n2.x, n2.y);
               ctx.stroke();
 
-              // --- B) İÇ ÇEKİRDEK (İnce, Parlak ve Akışkan) ---
-              ctx.strokeStyle = grad;
-              ctx.lineWidth = (0.5 + (n1.z + 1) * 0.8) * scaleFactor;
-              
-              // Kesikli çizgi ile enerji akışı hissi
-              ctx.setLineDash([scale * 0.08, scale * 0.03]); 
-              ctx.lineDashOffset = -time * 80; // Çizgilerin akış hızı
-
+              // B) İç Çekirdek (Keskin, Düz Çizgi)
+              ctx.strokeStyle = `hsla(${currentHue}, 100%, 85%, ${depthAlpha})`;
+              ctx.lineWidth = (0.6 + (n1.z + 1) * 1.0) * scaleFactor;
               ctx.beginPath();
               ctx.moveTo(n1.x, n1.y);
               ctx.lineTo(n2.x, n2.y);
@@ -959,48 +941,47 @@ if('serviceWorker' in navigator){
             }
           }
         }
-        ctx.setLineDash([]); // Sıfırla
 
-        // 4) DIŞA TAŞAN KIRIK TELLER (Spikes)
-        for (let i = 0; i < 30; i++) {
-          // Sadece dış kabuktaki (z > 0) noktalardan seç
+        // 4) DIŞA TAŞAN DÜZ VE KESKİN TELLER (Kaotik Görünüm)
+        for (let i = 0; i < 50; i++) {
           const nodeIndex = Math.floor(Math.random() * NUM_NODES);
           const node = projectedNodes[nodeIndex];
           
-          if (node.z > 0.5 && Math.random() < 0.8) {
-            const angle = Math.atan2(node.y, node.x);
-            const len = scale * (0.1 + Math.random() * 0.2);
-            const endX = node.x + Math.cos(angle) * len;
-            const endY = node.y + Math.sin(angle) * len;
+          // Rastgele bir açıda dışarı doğru düz bir çizgi
+          const angle = Math.random() * TAU;
+          const len = scale * (0.05 + Math.random() * 0.3); // Rastgele uzunluklar
+          const endX = node.x + Math.cos(angle) * len;
+          const endY = node.y + Math.sin(angle) * len;
 
-            ctx.strokeStyle = `hsla(${goldHue}, 100%, 75%, ${0.6 * visibility})`;
-            ctx.lineWidth = 1.5 * scaleFactor;
-            ctx.setLineDash([scale*0.1, scale*0.08]); // Kırık görünüm
-            ctx.beginPath();
-            ctx.moveTo(node.x, node.y);
-            ctx.lineTo(endX, endY);
-            ctx.stroke();
+          const alpha = (node.z + 1) * 0.5 * visibility;
+          
+          // Glow (Kalın)
+          ctx.strokeStyle = `hsla(${goldHue}, 100%, 65%, ${alpha * 0.5})`;
+          ctx.lineWidth = 2 * scaleFactor;
+          ctx.beginPath();
+          ctx.moveTo(node.x, node.y);
+          ctx.lineTo(endX, endY);
+          ctx.stroke();
 
-            // Telin ucunda parlayan toz
-            ctx.fillStyle = `hsla(${goldHue}, 100%, 90%, ${0.8 * visibility})`;
-            ctx.beginPath();
-            ctx.arc(endX, endY, 1.5 * scaleFactor, 0, TAU);
-            ctx.fill();
-          }
+          // Core (İnce Keskin)
+          ctx.strokeStyle = `hsla(${goldHue}, 100%, 90%, ${alpha})`;
+          ctx.lineWidth = 0.8 * scaleFactor;
+          ctx.beginPath();
+          ctx.moveTo(node.x, node.y);
+          ctx.lineTo(endX, endY);
+          ctx.stroke();
         }
-        ctx.setLineDash([]);
 
         // 5) DÜĞÜMLERİ ÇİZ (Parlayan Noktalar)
         for (let i = 0; i < NUM_NODES; i++) {
           const node = projectedNodes[i];
-          const alpha = (node.z + 1) * 0.5; // Arkadakiler daha sönük
+          const alpha = (node.z + 1) * 0.5; 
           
           ctx.fillStyle = `hsla(${goldHue}, 100%, 85%, ${alpha * visibility})`;
           ctx.beginPath();
           ctx.arc(node.x, node.y, node.size * scaleFactor, 0, TAU);
           ctx.fill();
 
-          // Işık halesi
           ctx.fillStyle = `hsla(${goldHue}, 100%, 60%, ${alpha * 0.3 * visibility})`;
           ctx.beginPath();
           ctx.arc(node.x, node.y, node.size * 2.5 * scaleFactor, 0, TAU);

@@ -840,25 +840,21 @@ if('serviceWorker' in navigator){
         const earthR = scale * 1.0;
         const rot = time * 0.5; 
 
-        // Lazerin Y konumu (yukarıdan aşağıya doğru salınım)
-        const scanPhase = (Math.sin(t * 1.2) + 1) / 2; // 0 ile 1 arası
+        const scanPhase = (Math.sin(t * 1.2) + 1) / 2; 
         const scanY = cyc - earthR + scanPhase * earthR * 2;
         
-        // Lazerin anlık genişliği (dairenin o Y noktasındaki genişliği)
         const dy = scanY - cyc;
         const scanRadius = Math.sqrt(Math.max(0, earthR*earthR - dy*dy));
 
         const latCount = 7; 
         const lonCount = 12;
 
-        // Dünya'nın arka planı
         const bgEarth = ctx.createRadialGradient(cxc, cyc, 0, cxc, cyc, earthR);
         bgEarth.addColorStop(0, `hsla(200, 100%, 50%, ${0.05 * visibility})`);
         bgEarth.addColorStop(1, `hsla(220, 100%, 20%, ${0.01 * visibility})`);
         ctx.fillStyle = bgEarth;
         ctx.beginPath(); ctx.arc(cxc, cyc, earthR, 0, TAU); ctx.fill();
 
-        // Dünya Çizgileri (Enlem ve Boylam)
         ctx.lineWidth = 1 * scaleFactor;
         
         // Boylamlar
@@ -878,28 +874,25 @@ if('serviceWorker' in navigator){
             const px = cxc + rx * proj;
             const py = cyc + y3d * proj;
             
-            // Lazerin geçtiği yere göre renk/parlaklık ayarı
             let distToLaser = Math.abs(py - scanY);
-            let isScanned = py < scanY; // Lazerin yukarısında mı? (taranmış)
+            let isScanned = py < scanY; 
             
             let alpha = 0.15;
-            let color = "190, 100%, 70%"; // Normal soluk mavi
+            let light = 70;
 
             if (isScanned) {
-                // Lazerden uzaklaştıkça sön
                 let scanFade = Math.max(0, 1 - (scanY - py) / (earthR * 0.8));
                 alpha = 0.15 + scanFade * 0.6;
-                color = `190, 100%, ${70 + scanFade * 30}%`; // Daha parlak
+                light = 70 + scanFade * 30;
             } else if (distToLaser < 20) {
-                // Lazerin hemen altı (anlık parlama)
                 alpha = 0.8;
-                color = "180, 100%, 90%";
+                light = 90;
             }
 
             if(j === 0) ctx.moveTo(px, py);
             else ctx.lineTo(px, py);
           }
-          ctx.strokeStyle = `hsla(${color}, ${alpha * visibility})`;
+          ctx.strokeStyle = `hsla(190, 100%, ${light}%, ${alpha * visibility})`;
           ctx.stroke();
         }
         
@@ -931,31 +924,27 @@ if('serviceWorker' in navigator){
 
         // --- 3. LAZER TARAYICI ---
         if (scanRadius > 0) {
-            // Lazerin arkasındaki "fütüristik kalıntı" (Gradient)
             const trailGrad = ctx.createLinearGradient(cxc, scanY, cxc, scanY - earthR * 0.8);
-            trailGrad.addColorStop(0, `rgba(150, 255, 255, ${0.6 * visibility})`); // Lazerin olduğu yer
+            trailGrad.addColorStop(0, `rgba(150, 255, 255, ${0.6 * visibility})`); 
             trailGrad.addColorStop(0.5, `rgba(50, 200, 255, ${0.2 * visibility})`);
-            trailGrad.addColorStop(1, `rgba(0, 0, 0, 0)`); // Yukarıda kaybolur
+            trailGrad.addColorStop(1, `rgba(0, 0, 0, 0)`); 
             
             ctx.fillStyle = trailGrad;
             ctx.beginPath();
             ctx.ellipse(cxc, scanY - earthR*0.4, scanRadius, earthR*0.4, 0, 0, TAU);
             ctx.fill();
 
-            // Lazerin kendisi (Beyaz/Turkuaz parlak çizgi)
             ctx.strokeStyle = `rgba(200, 255, 255, ${0.9 * visibility})`;
             ctx.lineWidth = 2 * scaleFactor;
             ctx.beginPath();
             ctx.ellipse(cxc, scanY, scanRadius, scanRadius * 0.15, 0, 0, TAU);
             ctx.stroke();
 
-            // Lazerin merkezindeki aşırı parlak nokta
             ctx.fillStyle = `rgba(255, 255, 255, ${1 * visibility})`;
             ctx.beginPath();
             ctx.arc(cxc, scanY, 3 * scaleFactor, 0, TAU);
             ctx.fill();
             
-            // Lazerin etrafına yayılan glow
             const laserGlow = ctx.createRadialGradient(cxc, scanY, 0, cxc, scanY, scanRadius);
             laserGlow.addColorStop(0, `rgba(150, 255, 255, ${0.4 * visibility})`);
             laserGlow.addColorStop(1, `rgba(150, 255, 255, 0)`);

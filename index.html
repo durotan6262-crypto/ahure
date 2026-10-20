@@ -654,9 +654,8 @@ if('serviceWorker' in navigator){
       const flareWidth = W * scaleFactor;
       const halfFlare = flareWidth / 2;
 
-      // Standart Yatay Flare (Gezegen takibi yok)
       const targetAngles = [0, Math.PI];
-      const flareIntensity = [1.0, 1.0]; // Diğer modlarda parlaklık hep tam
+      const flareIntensity = [1.0, 1.0];
 
       for(let f = 0; f < 2; f++){
         let dAng = targetAngles[f] - currentFlareAngles[f];
@@ -718,107 +717,113 @@ if('serviceWorker' in navigator){
       ctx.fillStyle = core;
       ctx.beginPath(); ctx.arc(cxc, cyc, coreR, 0, TAU); ctx.fill();
 
-                  // WORK: Holografik Altın Visör (Gerçek 3D Ağ Yapısı)
+      // ==========================================
+      // WORK MODU: KAOTİK HOLOGRAM
+      // ==========================================
       if(currentMode === "work" && visibility > 0.5){
         ctx.globalCompositeOperation = "lighter";
         
-        const goldHue = 42; // Altın/Amber tonu
-        const time = t * 0.4; // Genel dönüş hızı
+        const goldHue = 35; 
+        const time = t * 0.5;
 
         ctx.save();
         ctx.translate(cxc, cyc);
 
-        // 1) ARKA PLAN KÜRESEL PARLAMA
-        const bgGlow = ctx.createRadialGradient(0, 0, scale*0.1, 0, 0, scale*1.4);
-        bgGlow.addColorStop(0, `hsla(${goldHue}, 100%, 55%, ${0.25 * visibility})`);
-        bgGlow.addColorStop(0.5, `hsla(${goldHue}, 100%, 40%, ${0.08 * visibility})`);
-        bgGlow.addColorStop(1, "rgba(0,0,0,0)");
-        ctx.fillStyle = bgGlow;
-        ctx.beginPath(); ctx.arc(0, 0, scale*1.4, 0, TAU); ctx.fill();
+        // 1) MERKEZ ENERJİ KÜRESİ
+        const wCoreR = scale * 0.45;
+        const wCoreGlow = ctx.createRadialGradient(0, 0, 0, 0, 0, wCoreR);
+        wCoreGlow.addColorStop(0, `hsla(${goldHue}, 100%, 75%, ${0.8 * visibility})`);
+        wCoreGlow.addColorStop(0.4, `hsla(${goldHue}, 100%, 55%, ${0.4 * visibility})`);
+        wCoreGlow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = wCoreGlow;
+        ctx.beginPath(); ctx.arc(0, 0, wCoreR, 0, TAU); ctx.fill();
 
-        // 2) LİFLİ ENERJİ AĞI (İç içe geçmiş Bezier Eğrileri)
-        // 40 adet lif, kürenin etrafını saracak
-        for(let i = 0; i < 40; i++){
-          const seed = i * 1.618;
-          const angleOffset = t * (0.2 + (i % 4) * 0.1) + seed; // Farklı hızlarda dönsünler
+        // 2) KAOTİK LİFLER
+        for(let i = 0; i < 60; i++){
+          const seed = i * 1.37;
+          const off = Math.sin(time * 0.8 + seed) * 2; 
+          const angle = time * (0.5 + (i % 3) * 0.2) + seed;
           
-          // Lifin boyutları (Küresel hacim için sinüs kullanıyoruz)
-          const r1 = scale * (0.6 + Math.sin(seed * 2) * 0.2);
-          const r2 = scale * (0.8 + Math.cos(seed * 3) * 0.3);
+          const rBase = scale * (0.6 + Math.sin(seed * 3) * 0.35);
+          const rIn = scale * (0.2 + Math.abs(Math.cos(seed * 2)) * 0.3);
           
-          // Başlangıç ve bitiş noktaları (Kürenin etrafında)
-          const startX = Math.cos(angleOffset) * r1;
-          const startY = Math.sin(angleOffset) * r1 * 0.8;
-          const endX = Math.cos(angleOffset + Math.PI) * r1;
-          const endY = Math.sin(angleOffset + Math.PI) * r1 * 0.8;
+          const startX = Math.cos(angle + off) * rBase;
+          const startY = Math.sin(angle + off) * rBase * 0.8;
+          const endX = Math.cos(angle + Math.PI + off) * rBase;
+          const endY = Math.sin(angle + Math.PI + off) * rBase * 0.8;
 
-          // Kontrol noktaları (Lifin içeri doğru kıvrılmasını sağlar)
-          const cp1x = Math.cos(angleOffset + 1.5) * r2;
-          const cp1y = Math.sin(angleOffset + 1.5) * r2 * 0.9;
-          const cp2x = Math.cos(angleOffset - 1.5) * r2;
-          const cp2y = Math.sin(angleOffset - 1.5) * r2 * 0.9;
+          const cp1x = Math.cos(angle + 1.2) * rIn;
+          const cp1y = Math.sin(angle + 1.2) * rIn * 0.8;
+          const cp2x = Math.cos(angle - 1.2) * rIn;
+          const cp2y = Math.sin(angle - 1.2) * rIn * 0.8;
 
-          // Enerji akışı (çizginin parlaklığı zamanla değişsin)
-          const pulse = 0.3 + Math.sin(t * 3 + seed) * 0.3;
+          const alpha = 0.2 + Math.abs(Math.sin(time * 2 + seed)) * 0.6;
           
-          ctx.strokeStyle = `hsla(${goldHue}, 100%, 70%, ${pulse * visibility})`;
-          ctx.lineWidth = (0.8 + Math.sin(seed) * 0.5) * scaleFactor;
+          ctx.strokeStyle = `hsla(${goldHue + (i%2)*10}, 100%, 65%, ${alpha * visibility})`;
+          ctx.lineWidth = (0.5 + Math.sin(seed)*0.5) * scaleFactor;
+          
+          ctx.setLineDash([scale*0.1, scale*0.05]);
+          ctx.lineDashOffset = -time * 20; 
+
           ctx.beginPath();
           ctx.moveTo(startX, startY);
           ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, endX, endY);
           ctx.stroke();
         }
+        ctx.setLineDash([]);
 
-        // 3) ENLEM VE BOYLAM ÇİZGİLERİ (Hologram Hissi)
-        for(let i = 0; i < 12; i++){
-          const lat = (i / 11 - 0.5) * Math.PI; // -90 ile +90 derece arası
-          const y = Math.sin(lat) * scale * 0.9;
-          const r = Math.cos(lat) * scale * 0.9;
-          
-          ctx.strokeStyle = `hsla(${goldHue}, 100%, 65%, ${0.2 * visibility})`;
-          ctx.lineWidth = 1 * scaleFactor;
-          ctx.beginPath();
-          ctx.ellipse(0, y, r, r * 0.3, 0, 0, TAU); // Yatay çizgiler
-          ctx.stroke();
-        }
-        
-        // Boylam çizgileri (Dönen)
-        for(let i = 0; i < 8; i++){
-          const rot = (i / 8) * Math.PI + time;
-          ctx.strokeStyle = `hsla(${goldHue}, 100%, 65%, ${0.15 * visibility})`;
-          ctx.lineWidth = 1 * scaleFactor;
-          ctx.beginPath();
-          ctx.ellipse(0, 0, scale * 0.9, scale * 0.9, rot, 0, TAU); // Dikey çizgiler
-          ctx.stroke();
-        }
-
-        // 4) UÇUŞAN PARÇACIKLAR (Kürenin etrafında)
-        for(let i = 0; i < 30; i++){
-          const seed = i * 7.3;
-          const a = t * (0.5 + (i%3)*0.2) + seed;
-          const r = scale * (0.9 + Math.sin(t * 2 + seed) * 0.3);
-          
-          // 3D hissi için elips yörünge
+        // 3) HOLOGRAM IZGARALARI
+        for(let i = 0; i < 15; i++){
+          const seed = i * 4.1;
+          const a = Math.sin(time * 0.6 + seed) * TAU;
+          const r = scale * (0.4 + Math.sin(seed) * 0.5);
           const px = Math.cos(a) * r;
-          const py = Math.sin(a) * r * 0.7; 
+          const py = Math.sin(a) * r * 0.8;
           
-          const pAlpha = Math.abs(Math.sin(t * 4 + seed)) * 0.8;
-          ctx.fillStyle = `hsla(${goldHue}, 100%, 85%, ${pAlpha * visibility})`;
+          const size = scale * (0.05 + Math.abs(Math.sin(seed*2)) * 0.1);
+          const rot = time * 2 + seed;
+          
+          ctx.strokeStyle = `hsla(${goldHue}, 100%, 85%, ${0.15 * visibility})`;
+          ctx.lineWidth = 1 * scaleFactor;
+          ctx.save();
+          ctx.translate(px, py);
+          ctx.rotate(rot);
           ctx.beginPath();
-          ctx.arc(px, py, (1 + Math.sin(t*5 + seed)) * scaleFactor, 0, TAU);
-          ctx.fill();
+          ctx.moveTo(-size, -size);
+          ctx.lineTo(size, -size);
+          ctx.lineTo(size, size);
+          ctx.stroke();
+          ctx.restore();
         }
 
-        // 5) ÇEKİRDEK (Merkezdeki yoğun enerji)
-        const coreGlow = ctx.createRadialGradient(0, 0, 0, 0, 0, scale*0.4);
-        coreGlow.addColorStop(0, `hsla(${goldHue}, 100%, 90%, ${0.8 * visibility})`);
-        coreGlow.addColorStop(0.4, `hsla(${goldHue}, 100%, 60%, ${0.4 * visibility})`);
-        coreGlow.addColorStop(1, "rgba(0,0,0,0)");
-        ctx.fillStyle = coreGlow;
-        ctx.beginPath(); ctx.arc(0, 0, scale*0.4, 0, TAU); ctx.fill();
+        // 4) ETRAFA SIÇRAYAN PARÇACIKLAR
+        for(let i = 0; i < 80; i++){
+          const seed = i * 7.7;
+          const r = scale * (0.5 + Math.sin(time * 1.5 + seed) * 0.5 + (seed % 0.4));
+          const a = time * 0.5 + seed;
+          
+          const px = Math.cos(a) * r;
+          const py = Math.sin(a) * r * 0.8;
+          
+          const pAlpha = Math.abs(Math.sin(time * 3 + seed)) * 0.8;
+          const pSize = (0.5 + Math.abs(Math.cos(seed))) * 1.5;
+          
+          ctx.fillStyle = `hsla(${goldHue}, 100%, 80%, ${pAlpha * visibility})`;
+          ctx.beginPath();
+          ctx.arc(px, py, pSize * scaleFactor, 0, TAU);
+          ctx.fill();
+          
+          ctx.strokeStyle = `hsla(${goldHue}, 100%, 60%, ${pAlpha * 0.5 * visibility})`;
+          ctx.lineWidth = 0.8 * scaleFactor;
+          ctx.beginPath();
+          ctx.moveTo(px * 0.9, py * 0.9);
+          ctx.lineTo(px * 1.1, py * 1.1);
+          ctx.stroke();
+        }
 
         ctx.restore();
       }
+      // ==========================================
 
       // EMERGENCY: sonar halkaları
       if(currentMode === "emergency" && visibility > 0.5){

@@ -339,6 +339,8 @@ if('serviceWorker' in navigator){
   };
   const A = { hue:200, pulse:2.15, breathe:0.72, star:0, vib:0 };
 
+  let currentFlareAngles = [0, Math.PI];
+
   let AC=null, mg=null, atmoStarted=false, atmoInterval=null;
   function initA(){
     try{

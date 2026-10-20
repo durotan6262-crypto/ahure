@@ -343,7 +343,7 @@ if('serviceWorker' in navigator){
 
   // YOĞUNLUK VE PERFORMANS DENGESİ
   let holoNodes = [];
-  const NUM_NODES = 180;
+  const NUM_NODES = 250;
   const HOLO_RADIUS = 1.0;
 
   for(let i = 0; i < NUM_NODES; i++) {
@@ -352,7 +352,7 @@ if('serviceWorker' in navigator){
     const theta = u * TAU;
     const phi = Math.acos(2 * v - 1);
     // 0.6 değeri düğümleri merkezden dışarı doğru iter (Merkez seyrek, dış kısım daha dolu)
-    const r = HOLO_RADIUS * Math.pow(Math.random(), 0.2); 
+    const r = HOLO_RADIUS * Math.pow(Math.random(), 0.3); 
 
     holoNodes.push({
       x: r * Math.sin(phi) * Math.cos(theta),
@@ -906,7 +906,7 @@ if('serviceWorker' in navigator){
             const dist3D = Math.sqrt(dx*dx + dy*dy + dz*dz);
 
             // Çizgi eşiğini 0.26 yaparak çizgi patlamasını (kasmayı) engelledik
-            if (dist3D < 0.22) {
+            if (dist3D < 0.20) {
               const depthAlpha = (1 - dist3D / 0.26) * (0.3 + (n1.z + 1) * 0.7) * visibility;
               
               const hueShift = Math.sin(i * 1.5 + j * 0.8) * 15; 

@@ -339,29 +339,6 @@ if('serviceWorker' in navigator){
   };
   const A = { hue:200, pulse:2.15, breathe:0.72, star:0, vib:0 };
 
-  let currentFlareAngles = [0, Math.PI];
-
-  // YOĞUNLUK VE PERFORMANS DENGESİ
-  let holoNodes = [];
-  const NUM_NODES = 250;
-  const HOLO_RADIUS = 1.0;
-
-  for(let i = 0; i < NUM_NODES; i++) {
-    const u = Math.random();
-    const v = Math.random();
-    const theta = u * TAU;
-    const phi = Math.acos(2 * v - 1);
-    // 0.6 değeri düğümleri merkezden dışarı doğru iter (Merkez seyrek, dış kısım daha dolu)
-    const r = HOLO_RADIUS * Math.pow(Math.random(), 0.3); 
-
-    holoNodes.push({
-      x: r * Math.sin(phi) * Math.cos(theta),
-      y: r * Math.sin(phi) * Math.sin(theta),
-      z: r * Math.cos(phi),
-      baseRadius: r
-    });
-  }
-
   let AC=null, mg=null, atmoStarted=false, atmoInterval=null;
   function initA(){
     try{
@@ -842,124 +819,115 @@ if('serviceWorker' in navigator){
       }
 
       // ==========================================
-      // WORK MODU: MERKEZ SEYREK, DIŞ KISIM DOLU
+      // WORK MODU: GÜNEŞ ÇEKİRDEĞİ VE ŞEFFAF DÜNYA
       // ==========================================
       if(currentMode === "work" && visibility > 0.5){
         ctx.globalCompositeOperation = "lighter";
-        
-        const time = t * 0.05; 
+        const time = t * 0.2;
 
+        // --- 1. MERKEZ: GÜNEŞ ÇEKİRDEĞİ ---
+        const sunR = scale * 0.35;
+        const sunGrad = ctx.createRadialGradient(cxc, cyc, 0, cxc, cyc, sunR);
+        sunGrad.addColorStop(0, `rgba(255, 255, 255, ${1 * visibility})`);
+        sunGrad.addColorStop(0.2, `rgba(255, 240, 150, ${1 * visibility})`);
+        sunGrad.addColorStop(0.5, `hsla(35, 100%, 60%, ${0.8 * visibility})`);
+        sunGrad.addColorStop(1, `hsla(15, 100%, 50%, 0)`);
+        ctx.fillStyle = sunGrad;
+        ctx.beginPath(); ctx.arc(cxc, cyc, sunR, 0, TAU); ctx.fill();
+
+        // Güneş Patlamaları (Solar Flares)
+        for(let i=0; i<30; i++){
+          const angle = (i / 30) * TAU + time * 0.5;
+          const len = sunR * (1.4 + Math.sin(time * 4 + i) * 0.6);
+          
+          const cpX = cxc + Math.cos(angle + Math.sin(time + i) * 0.4) * len * 0.5;
+          const cpY = cyc + Math.sin(angle + Math.cos(time + i) * 0.4) * len * 0.5;
+          const endX = cxc + Math.cos(angle) * len;
+          const endY = cyc + Math.sin(angle) * len;
+          
+          ctx.strokeStyle = `hsla(35, 100%, 70%, ${0.5 * visibility})`;
+          ctx.lineWidth = 1.5 * scaleFactor;
+          ctx.beginPath();
+          ctx.moveTo(cxc, cyc);
+          ctx.quadraticCurveTo(cpX, cpY, endX, endY);
+          ctx.stroke();
+          
+          ctx.fillStyle = `hsla(45, 100%, 95%, ${0.9 * visibility})`;
+          ctx.beginPath(); ctx.arc(endX, endY, 1.5 * scaleFactor, 0, TAU); ctx.fill();
+        }
+
+        // --- 2. DIŞ KATMAN: ŞEFFAF DÜNYA ---
+        const earthR = scale * 1.15;
+        const rot = time * 0.5; // Dünya'nın dönüş hızı
+
+        const latCount = 7; 
+        const lonCount = 12;
+        
+        // Boylamlar (Dikey)
+        for(let i=0; i<lonCount; i++){
+          const lonAngle = (i / lonCount) * Math.PI;
+          ctx.beginPath();
+          for(let j=0; j<=32; j++){
+            const latAngle = -Math.PI/2 + (j/32) * Math.PI;
+            let x3d = earthR * Math.cos(latAngle) * Math.cos(lonAngle);
+            let y3d = earthR * Math.sin(latAngle);
+            let z3d = earthR * Math.cos(latAngle) * Math.sin(lonAngle);
+            
+            let rx = x3d * Math.cos(rot) - z3d * Math.sin(rot);
+            let rz = x3d * Math.sin(rot) + z3d * Math.cos(rot);
+            
+            const proj = 1 + rz / (earthR * 2); 
+            const px = cxc + rx * proj;
+            const py = cyc + y3d * proj;
+            
+            if(j === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+          }
+          ctx.strokeStyle = `hsla(200, 100%, 75%, ${0.15 * visibility})`;
+          ctx.lineWidth = 1 * scaleFactor;
+          ctx.stroke();
+        }
+        
+        // Enlemler (Yatay)
+        for(let i=1; i<latCount; i++){
+          const latAngle = -Math.PI/2 + (i/latCount) * Math.PI;
+          const r = earthR * Math.cos(latAngle);
+          const y = earthR * Math.sin(latAngle);
+          
+          ctx.beginPath();
+          for(let j=0; j<=48; j++){
+            const lonAngle = (j/48) * TAU;
+            let x3d = r * Math.cos(lonAngle);
+            let z3d = r * Math.sin(lonAngle);
+            
+            let rx = x3d * Math.cos(rot) - z3d * Math.sin(rot);
+            let rz = x3d * Math.sin(rot) + z3d * Math.cos(rot);
+            
+            const proj = 1 + rz / (earthR * 2);
+            const px = cxc + rx * proj;
+            const py = cyc + y * proj;
+            
+            if(j === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+          }
+          ctx.strokeStyle = `hsla(200, 100%, 75%, ${0.12 * visibility})`;
+          ctx.lineWidth = 1 * scaleFactor;
+          ctx.stroke();
+        }
+        
+        // --- 3. IŞIK HÜZMESİ (Merkezden Dünyaya İnceleme) ---
         ctx.save();
         ctx.translate(cxc, cyc);
-
-        // 1) MERKEZ ENERJİ KÜRESİ (Merkez boş kalsın diye biraz küçültüldü)
-        const wCoreR = scale * 0.35; 
-        const wCoreGlow = ctx.createRadialGradient(0, 0, 0, 0, 0, wCoreR);
-        wCoreGlow.addColorStop(0, `hsla(30, 100%, 75%, ${0.95 * visibility})`); 
-        wCoreGlow.addColorStop(0.4, `hsla(20, 100%, 55%, ${0.6 * visibility})`);
-        wCoreGlow.addColorStop(1, "rgba(0,0,0,0)");
-        ctx.fillStyle = wCoreGlow;
-        ctx.beginPath(); ctx.arc(0, 0, wCoreR, 0, TAU); ctx.fill();
-
-        // 2) 3D DÜĞÜMLERİ HAFİFÇE DÖNDÜR
-        const projectedNodes = [];
-        for (let i = 0; i < NUM_NODES; i++) {
-          const node = holoNodes[i];
-          const cosX = Math.cos(time); const sinX = Math.sin(time);
-          const cosY = Math.cos(time * 0.8); const sinY = Math.sin(time * 0.8);
-
-          let x1 = node.x * cosY - node.z * sinY;
-          let z1 = node.x * sinY + node.z * cosY;
-          let y1 = node.y;
-
-          let y2 = y1 * cosX - z1 * sinX;
-          let z2 = y1 * sinX + z1 * cosX;
-          let x2 = x1;
-
-          const scale3D = scale * 1.2;
-          const finalX = x2 * scale3D;
-          const finalY = y2 * scale3D;
-          const finalZ = z2; 
-
-          const pFactor = 1 + finalZ * 0.5;
-          
-          projectedNodes.push({
-            x: finalX * pFactor,
-            y: finalY * pFactor,
-            z: finalZ,
-            size: (0.5 + (finalZ + 1) * 0.5) * 2.5 
-          });
-        }
-
-        // 3) KIRIK VE BONCUKLU TELLER (Dışa doğru sıklaşan, dengeli)
-        for (let i = 0; i < NUM_NODES; i++) {
-          const n1 = projectedNodes[i];
-          const origN1 = holoNodes[i];
-          
-          for (let j = i + 1; j < NUM_NODES; j++) {
-            const n2 = projectedNodes[j];
-            const origN2 = holoNodes[j];
-
-            const dx = origN1.x - origN2.x;
-            const dy = origN1.y - origN2.y;
-            const dz = origN1.z - origN2.z;
-            const dist3D = Math.sqrt(dx*dx + dy*dy + dz*dz);
-
-            // Çizgi eşiğini 0.26 yaparak çizgi patlamasını (kasmayı) engelledik
-            if (dist3D < 0.20) {
-              const depthAlpha = (1 - dist3D / 0.26) * (0.3 + (n1.z + 1) * 0.7) * visibility;
-              
-              const hueShift = Math.sin(i * 1.5 + j * 0.8) * 15; 
-              ctx.strokeStyle = `hsla(${25 + hueShift}, 95%, 65%, ${depthAlpha})`; 
-              
-              const lineW = 0.6 + ((i * j) % 10) / 10 * 0.8;
-              ctx.lineWidth = lineW * scaleFactor; 
-
-              let startX = n1.x, startY = n1.y;
-              let endX = n2.x, endY = n2.y;
-              
-              const segments = 4 + ((i + j) % 4); 
-              
-              ctx.beginPath();
-              ctx.moveTo(startX, startY);
-
-              for(let s = 1; s < segments; s++) {
-                  const tSeg = s / segments;
-                  
-                  const jitterAmt = scale * 0.06; 
-                  const jx = Math.sin(i * 12.3 + j * 4.5 + s * 7.1) * jitterAmt;
-                  const jy = Math.cos(i * 3.2 + j * 8.7 + s * 2.4) * jitterAmt;
-                  
-                  const px = startX + (endX - startX) * tSeg + jx;
-                  const py = startY + (endY - startY) * tSeg + jy;
-                  
-                  ctx.lineTo(px, py);
-
-                  if ((i + j + s) % 2 === 0) {
-                      ctx.fillStyle = `hsla(${25 + hueShift}, 100%, 85%, ${depthAlpha * 1.5})`;
-                      ctx.beginPath();
-                      ctx.arc(px, py, (0.9 + ((i+s)%3)*0.5) * scaleFactor, 0, TAU);
-                      ctx.fill();
-                  }
-              }
-              
-              ctx.lineTo(endX, endY); 
-              ctx.stroke();
-            }
-          }
-        }
-
-        // 4) ANA DÜĞÜMLER
-        for (let i = 0; i < NUM_NODES; i++) {
-          const node = projectedNodes[i];
-          const alpha = (node.z + 1) * 0.5; 
-          
-          ctx.fillStyle = `hsla(30, 100%, 75%, ${alpha * visibility})`;
-          ctx.beginPath();
-          ctx.arc(node.x, node.y, (node.size * 0.8) * scaleFactor, 0, TAU); 
-          ctx.fill();
-        }
-
+        ctx.rotate(t * 0.8);
+        const beamGrad = ctx.createLinearGradient(0, 0, earthR, 0);
+        beamGrad.addColorStop(0, `rgba(255, 255, 255, ${0.8 * visibility})`);
+        beamGrad.addColorStop(1, `hsla(40, 100%, 70%, 0)`);
+        ctx.fillStyle = beamGrad;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.arc(0, 0, earthR, -0.05, 0.05);
+        ctx.closePath();
+        ctx.fill();
         ctx.restore();
       }
 
@@ -1010,7 +978,7 @@ if('serviceWorker' in navigator){
 
     const replies = {
       idle:       ["Seni dinliyorum.", "Buradayım.", "Ne düşünüyorsun?", "Anlat bakalım."],
-      work:       ["Araştırıyorum...", "Veri topluyorum.", "Çalışma modundayım.", "Analiz ediyorum."],
+      work:       ["Dünya'yı inceliyorum...", "Veri topluyorum.", "Çalışma modundayım.", "Analiz ediyorum."],
       danger:     ["Dikkat, bir şey seziyorum.", "Tehdit algılıyorum.", "Tetiktteyim.", "Gözüm üstünde."],
       emergency:  ["Acil durumdayım!", "Hemen müdahale ediyorum!", "Kritik seviye!", "Hızlanıyorum!"],
       protection: ["Seni koruyorum.", "Kalkan aktif.", "Güvendesin.", "Yanındayım."],

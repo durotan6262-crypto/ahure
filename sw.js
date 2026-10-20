@@ -1,4 +1,4 @@
-const CACHE = 'varlik-v97';
+const CACHE = 'varlik-v98';
 const ASSETS = ['./', './index.html', './manifest.json', './Idle.png', './world.png', './danger.png'];
 
 self.addEventListener('install', e => {

@@ -821,50 +821,35 @@ if('serviceWorker' in navigator){
       }
 
       // ==========================================
-      // WORK MODU: GÜNEŞ ÇEKİRDEĞİ VE ŞEFFAF DÜNYA
+      // WORK MODU: HOLOGRAM DÜNYA VE VERİ ÇEKİRDEĞİ
       // ==========================================
       if(currentMode === "work" && visibility > 0.5){
         ctx.globalCompositeOperation = "lighter";
         const time = t * 0.2;
 
-        // --- 1. MERKEZ: GÜNEŞ ÇEKİRDEĞİ ---
-        const sunR = scale * 0.35;
-        const sunGrad = ctx.createRadialGradient(cxc, cyc, 0, cxc, cyc, sunR);
-        sunGrad.addColorStop(0, `rgba(255, 255, 255, ${1 * visibility})`);
-        sunGrad.addColorStop(0.2, `rgba(255, 240, 150, ${1 * visibility})`);
-        sunGrad.addColorStop(0.5, `hsla(35, 100%, 60%, ${0.8 * visibility})`);
-        sunGrad.addColorStop(1, `hsla(15, 100%, 50%, 0)`);
-        ctx.fillStyle = sunGrad;
-        ctx.beginPath(); ctx.arc(cxc, cyc, sunR, 0, TAU); ctx.fill();
+        // --- 1. MERKEZDEKİ ENERJİ ÇEKİRDEĞİ ---
+        const coreR = scale * 0.25;
+        const coreGlow = ctx.createRadialGradient(cxc, cyc, 0, cxc, cyc, scale * 0.7);
+        coreGlow.addColorStop(0, `rgba(150, 255, 255, ${0.9 * visibility})`);
+        coreGlow.addColorStop(0.2, `hsla(190, 100%, 60%, ${0.6 * visibility})`);
+        coreGlow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = coreGlow;
+        ctx.beginPath(); ctx.arc(cxc, cyc, scale * 0.7, 0, TAU); ctx.fill();
 
-        // Güneş Patlamaları (Solar Flares)
-        for(let i=0; i<30; i++){
-          const angle = (i / 30) * TAU + time * 0.5;
-          const len = sunR * (1.4 + Math.sin(time * 4 + i) * 0.6);
-          
-          const cpX = cxc + Math.cos(angle + Math.sin(time + i) * 0.4) * len * 0.5;
-          const cpY = cyc + Math.sin(angle + Math.cos(time + i) * 0.4) * len * 0.5;
-          const endX = cxc + Math.cos(angle) * len;
-          const endY = cyc + Math.sin(angle) * len;
-          
-          ctx.strokeStyle = `hsla(35, 100%, 70%, ${0.5 * visibility})`;
-          ctx.lineWidth = 1.5 * scaleFactor;
-          ctx.beginPath();
-          ctx.moveTo(cxc, cyc);
-          ctx.quadraticCurveTo(cpX, cpY, endX, endY);
-          ctx.stroke();
-          
-          ctx.fillStyle = `hsla(45, 100%, 95%, ${0.9 * visibility})`;
-          ctx.beginPath(); ctx.arc(endX, endY, 1.5 * scaleFactor, 0, TAU); ctx.fill();
-        }
-
-        // --- 2. DIŞ KATMAN: ŞEFFAF DÜNYA ---
-        const earthR = scale * 1.15;
-        const rot = time * 0.5; // Dünya'nın dönüş hızı
+        // --- 2. ŞEFFAF DÜNYA (Hologram) ---
+        const earthR = scale * 1.0;
+        const rot = time * 0.5; 
 
         const latCount = 7; 
         const lonCount = 12;
         
+        // Dünya'nın arka planını hafifçe dolduralım (şeffaf)
+        const bgEarth = ctx.createRadialGradient(cxc, cyc, 0, cxc, cyc, earthR);
+        bgEarth.addColorStop(0, `hsla(200, 100%, 50%, ${0.1 * visibility})`);
+        bgEarth.addColorStop(1, `hsla(220, 100%, 20%, ${0.05 * visibility})`);
+        ctx.fillStyle = bgEarth;
+        ctx.beginPath(); ctx.arc(cxc, cyc, earthR, 0, TAU); ctx.fill();
+
         // Boylamlar (Dikey)
         for(let i=0; i<lonCount; i++){
           const lonAngle = (i / lonCount) * Math.PI;
@@ -885,7 +870,7 @@ if('serviceWorker' in navigator){
             if(j === 0) ctx.moveTo(px, py);
             else ctx.lineTo(px, py);
           }
-          ctx.strokeStyle = `hsla(200, 100%, 75%, ${0.15 * visibility})`;
+          ctx.strokeStyle = `hsla(190, 100%, 70%, ${0.25 * visibility})`;
           ctx.lineWidth = 1 * scaleFactor;
           ctx.stroke();
         }
@@ -912,25 +897,77 @@ if('serviceWorker' in navigator){
             if(j === 0) ctx.moveTo(px, py);
             else ctx.lineTo(px, py);
           }
-          ctx.strokeStyle = `hsla(200, 100%, 75%, ${0.12 * visibility})`;
+          ctx.strokeStyle = `hsla(190, 100%, 70%, ${0.2 * visibility})`;
           ctx.lineWidth = 1 * scaleFactor;
           ctx.stroke();
         }
+
+        // --- 3. DIŞ VERİ HALKALARI ---
+        for(let i=0; i<2; i++){
+          const ringR = earthR * (1.15 + i*0.15);
+          ctx.save();
+          ctx.translate(cxc, cyc);
+          ctx.rotate(time * (0.3 + i*0.2) * (i===0?1:-1));
+          
+          ctx.strokeStyle = `hsla(190, 100%, 60%, ${0.3 * visibility})`;
+          ctx.lineWidth = 1.5 * scaleFactor;
+          ctx.beginPath();
+          ctx.ellipse(0, 0, ringR, ringR * 0.3, 0, 0, TAU);
+          ctx.stroke();
+          
+          // Halka üzerindeki uydular
+          for(let k=0; k<4; k++){
+            const ang = (k/4) * TAU + time * 2;
+            const ux = Math.cos(ang) * ringR;
+            const uy = Math.sin(ang) * ringR * 0.3;
+            ctx.fillStyle = `hsla(190, 100%, 85%, ${0.8 * visibility})`;
+            ctx.beginPath(); ctx.arc(ux, uy, 2.5 * scaleFactor, 0, TAU); ctx.fill();
+          }
+          ctx.restore();
+        }
+
+        // --- 4. LAZER TARAYICI (Scanner) ---
+        const scanY = Math.sin(t * 2) * earthR; 
+        const scanR = Math.sqrt(earthR*earthR - scanY*scanY);
         
-        // --- 3. IŞIK HÜZMESİ (Merkezden Dünyaya İnceleme) ---
         ctx.save();
-        ctx.translate(cxc, cyc);
-        ctx.rotate(t * 0.8);
-        const beamGrad = ctx.createLinearGradient(0, 0, earthR, 0);
-        beamGrad.addColorStop(0, `rgba(255, 255, 255, ${0.8 * visibility})`);
-        beamGrad.addColorStop(1, `hsla(40, 100%, 70%, 0)`);
-        ctx.fillStyle = beamGrad;
         ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.arc(0, 0, earthR, -0.05, 0.05);
-        ctx.closePath();
-        ctx.fill();
+        ctx.arc(cxc, cyc, earthR, 0, TAU);
+        ctx.clip(); // Dünya dışına taşmasın
+        
+        ctx.fillStyle = `rgba(150, 255, 255, ${0.15 * visibility})`;
+        ctx.fillRect(cxc - earthR, cyc + scanY - 5, earthR*2, 10);
+        
+        ctx.strokeStyle = `rgba(150, 255, 255, ${0.8 * visibility})`;
+        ctx.lineWidth = 1.5 * scaleFactor;
+        ctx.beginPath();
+        ctx.ellipse(cxc, cyc + scanY, scanR, scanR * 0.15, 0, 0, TAU);
+        ctx.stroke();
         ctx.restore();
+
+        // --- 5. VERİ SIÇRAMALARI (Data Arcs) ---
+        for(let i=0; i<6; i++){
+          const arcTime = (t * 1.5 + i) % 3; 
+          if(arcTime > 1) continue; // Sadece 1 saniye görünsün
+          
+          const angle = i * (TAU / 6);
+          const startX = cxc + Math.cos(angle) * earthR;
+          const startY = cyc + Math.sin(angle) * earthR * 0.6;
+          
+          const len = earthR * (0.3 + arcTime * 0.5);
+          const endX = cxc + Math.cos(angle) * (earthR + len);
+          const endY = cyc + Math.sin(angle) * (earthR + len) * 0.6;
+          
+          const cpX = cxc + Math.cos(angle + 0.5) * (earthR + len);
+          const cpY = cyc + Math.sin(angle + 0.5) * (earthR + len) * 0.6;
+          
+          ctx.strokeStyle = `hsla(190, 100%, 80%, ${(1 - arcTime) * visibility})`;
+          ctx.lineWidth = 1 * scaleFactor;
+          ctx.beginPath();
+          ctx.moveTo(startX, startY);
+          ctx.quadraticCurveTo(cpX, cpY, endX, endY);
+          ctx.stroke();
+        }
       }
 
       ctx.globalCompositeOperation = "source-over";

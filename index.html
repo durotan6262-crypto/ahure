@@ -908,8 +908,7 @@ if('serviceWorker' in navigator){
           });
         }
 
-        // 3) DÜĞÜMLERİ BİRBİRİNE BAĞLA (Teller)
-        ctx.lineWidth = 1 * scaleFactor;
+                // 3) DÜĞÜMLERİ BİRBİRİNE BAĞLA (Canlı ve Gerçekçi Teller)
         for (let i = 0; i < NUM_NODES; i++) {
           const n1 = projectedNodes[i];
           const origN1 = holoNodes[i];
@@ -924,20 +923,35 @@ if('serviceWorker' in navigator){
             const dz = origN1.z - origN2.z;
             const dist3D = Math.sqrt(dx*dx + dy*dy + dz*dz);
 
-            // Mesafe eşiği (ağın yoğunluğunu belirler)
-            if (dist3D < 0.25) {
-              const alpha = (1 - dist3D / 0.25) * 0.8 * visibility;
-              // Derinlik hissi (arkadakiler daha sönük)
-              const depthAlpha = alpha * (0.3 + (n1.z + 1) * 0.35);
+            // Mesafe eşiği
+            if (dist3D < 0.28) { // Biraz daha uzaktaki telleri de ekle
+              // Derinliğe göre parlaklık (öndekiler daha parlak)
+              const depthAlpha = (1 - dist3D / 0.28) * (0.15 + (n1.z + 1) * 0.4) * visibility;
               
-              // Bazı teller kopuk/kesik olsun
-              if ((i + j) % 7 === 0) {
-                ctx.setLineDash([scale*0.05, scale*0.05]);
-              } else {
-                ctx.setLineDash([]);
-              }
+              // Her telin uçları arasında renk geçişi (Gradient) oluştur
+              const grad = ctx.createLinearGradient(n1.x, n1.y, n2.x, n2.y);
+              // Zamanla hafifçe parlayan altın rengi
+              const currentHue = goldHue + Math.sin(time * 2 + i) * 10; 
+              grad.addColorStop(0, `hsla(${currentHue}, 100%, 65%, ${depthAlpha})`);
+              grad.addColorStop(1, `hsla(${currentHue}, 100%, 85%, ${depthAlpha})`);
 
-              ctx.strokeStyle = `hsla(${goldHue}, 100%, ${50 + n1.z * 20}%, ${depthAlpha})`;
+              // --- A) DIŞ GLOW (Geniş ve Soluk) ---
+              ctx.strokeStyle = `hsla(${currentHue}, 100%, 60%, ${depthAlpha * 0.3})`;
+              // Öndeki teller daha kalın
+              ctx.lineWidth = (1.5 + (n1.z + 1) * 1.5) * scaleFactor; 
+              ctx.beginPath();
+              ctx.moveTo(n1.x, n1.y);
+              ctx.lineTo(n2.x, n2.y);
+              ctx.stroke();
+
+              // --- B) İÇ ÇEKİRDEK (İnce, Parlak ve Akışkan) ---
+              ctx.strokeStyle = grad;
+              ctx.lineWidth = (0.5 + (n1.z + 1) * 0.8) * scaleFactor;
+              
+              // Kesikli çizgi ile enerji akışı hissi
+              ctx.setLineDash([scale * 0.08, scale * 0.03]); 
+              ctx.lineDashOffset = -time * 80; // Çizgilerin akış hızı
+
               ctx.beginPath();
               ctx.moveTo(n1.x, n1.y);
               ctx.lineTo(n2.x, n2.y);
@@ -945,7 +959,7 @@ if('serviceWorker' in navigator){
             }
           }
         }
-        ctx.setLineDash([]);
+        ctx.setLineDash([]); // Sıfırla
 
         // 4) DIŞA TAŞAN KIRIK TELLER (Spikes)
         for (let i = 0; i < 30; i++) {

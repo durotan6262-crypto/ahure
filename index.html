@@ -352,7 +352,7 @@ if('serviceWorker' in navigator){
     const theta = u * TAU;
     const phi = Math.acos(2 * v - 1);
     // 0.6 değeri düğümleri merkezden dışarı doğru iter (Merkez seyrek, dış kısım daha dolu)
-    const r = HOLO_RADIUS * Math.pow(Math.random(), 0.6); 
+    const r = HOLO_RADIUS * Math.pow(Math.random(), 0.2); 
 
     holoNodes.push({
       x: r * Math.sin(phi) * Math.cos(theta),
@@ -853,7 +853,7 @@ if('serviceWorker' in navigator){
         ctx.translate(cxc, cyc);
 
         // 1) MERKEZ ENERJİ KÜRESİ (Merkez boş kalsın diye biraz küçültüldü)
-        const wCoreR = scale * 0.55; 
+        const wCoreR = scale * 0.35; 
         const wCoreGlow = ctx.createRadialGradient(0, 0, 0, 0, 0, wCoreR);
         wCoreGlow.addColorStop(0, `hsla(30, 100%, 75%, ${0.95 * visibility})`); 
         wCoreGlow.addColorStop(0.4, `hsla(20, 100%, 55%, ${0.6 * visibility})`);
@@ -906,7 +906,7 @@ if('serviceWorker' in navigator){
             const dist3D = Math.sqrt(dx*dx + dy*dy + dz*dz);
 
             // Çizgi eşiğini 0.26 yaparak çizgi patlamasını (kasmayı) engelledik
-            if (dist3D < 0.26) {
+            if (dist3D < 0.22) {
               const depthAlpha = (1 - dist3D / 0.26) * (0.3 + (n1.z + 1) * 0.7) * visibility;
               
               const hueShift = Math.sin(i * 1.5 + j * 0.8) * 15; 

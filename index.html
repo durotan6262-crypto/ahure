@@ -343,7 +343,7 @@ if('serviceWorker' in navigator){
 
   // YOĞUNLUK VE PERFORMANS DENGESİ
   let holoNodes = [];
-  const NUM_NODES = 150;
+  const NUM_NODES = 180;
   const HOLO_RADIUS = 1.0;
 
   for(let i = 0; i < NUM_NODES; i++) {
@@ -351,7 +351,8 @@ if('serviceWorker' in navigator){
     const v = Math.random();
     const theta = u * TAU;
     const phi = Math.acos(2 * v - 1);
-    const r = HOLO_RADIUS * Math.pow(Math.random(), 1.4); 
+    // 0.6 değeri düğümleri merkezden dışarı doğru iter (Merkez seyrek, dış kısım daha dolu)
+    const r = HOLO_RADIUS * Math.pow(Math.random(), 0.6); 
 
     holoNodes.push({
       x: r * Math.sin(phi) * Math.cos(theta),
@@ -841,7 +842,7 @@ if('serviceWorker' in navigator){
       }
 
       // ==========================================
-      // WORK MODU: BELİRGİN VE CANLI BAKIR TEL ÖRGÜ
+      // WORK MODU: MERKEZ SEYREK, DIŞ KISIM DOLU
       // ==========================================
       if(currentMode === "work" && visibility > 0.5){
         ctx.globalCompositeOperation = "lighter";
@@ -851,10 +852,10 @@ if('serviceWorker' in navigator){
         ctx.save();
         ctx.translate(cxc, cyc);
 
-        // 1) MERKEZ ENERJİ KÜRESİ (Daha büyük ve canlı)
-        const wCoreR = scale * 0.65; // Biraz daha büyütüldü
+        // 1) MERKEZ ENERJİ KÜRESİ (Merkez boş kalsın diye biraz küçültüldü)
+        const wCoreR = scale * 0.55; 
         const wCoreGlow = ctx.createRadialGradient(0, 0, 0, 0, 0, wCoreR);
-        wCoreGlow.addColorStop(0, `hsla(30, 100%, 75%, ${0.95 * visibility})`); // Daha parlak
+        wCoreGlow.addColorStop(0, `hsla(30, 100%, 75%, ${0.95 * visibility})`); 
         wCoreGlow.addColorStop(0.4, `hsla(20, 100%, 55%, ${0.6 * visibility})`);
         wCoreGlow.addColorStop(1, "rgba(0,0,0,0)");
         ctx.fillStyle = wCoreGlow;
@@ -890,7 +891,7 @@ if('serviceWorker' in navigator){
           });
         }
 
-        // 3) KIRIK VE BONCUKLU TELLER (Daha Kalın ve Belirgin)
+        // 3) KIRIK VE BONCUKLU TELLER (Dışa doğru sıklaşan, dengeli)
         for (let i = 0; i < NUM_NODES; i++) {
           const n1 = projectedNodes[i];
           const origN1 = holoNodes[i];
@@ -904,15 +905,13 @@ if('serviceWorker' in navigator){
             const dz = origN1.z - origN2.z;
             const dist3D = Math.sqrt(dx*dx + dy*dy + dz*dz);
 
-            // Eşiği 0.30 yaparak telleri biraz daha sıklaştırdık
-            if (dist3D < 0.30) {
-              // Alfa değerini artırdık, böylece teller silik durmuyor
-              const depthAlpha = (1 - dist3D / 0.30) * (0.3 + (n1.z + 1) * 0.7) * visibility;
+            // Çizgi eşiğini 0.26 yaparak çizgi patlamasını (kasmayı) engelledik
+            if (dist3D < 0.26) {
+              const depthAlpha = (1 - dist3D / 0.26) * (0.3 + (n1.z + 1) * 0.7) * visibility;
               
               const hueShift = Math.sin(i * 1.5 + j * 0.8) * 15; 
-              ctx.strokeStyle = `hsla(${25 + hueShift}, 95%, 65%, ${depthAlpha})`; // Daha parlak renk
+              ctx.strokeStyle = `hsla(${25 + hueShift}, 95%, 65%, ${depthAlpha})`; 
               
-              // Çizgi kalınlığını artırdık
               const lineW = 0.6 + ((i * j) % 10) / 10 * 0.8;
               ctx.lineWidth = lineW * scaleFactor; 
 
@@ -936,7 +935,6 @@ if('serviceWorker' in navigator){
                   
                   ctx.lineTo(px, py);
 
-                  // Boncukların boyutu ve parlaklığı artırıldı
                   if ((i + j + s) % 2 === 0) {
                       ctx.fillStyle = `hsla(${25 + hueShift}, 100%, 85%, ${depthAlpha * 1.5})`;
                       ctx.beginPath();
@@ -951,14 +949,14 @@ if('serviceWorker' in navigator){
           }
         }
 
-        // 4) ANA DÜĞÜMLER (Daha belirgin)
+        // 4) ANA DÜĞÜMLER
         for (let i = 0; i < NUM_NODES; i++) {
           const node = projectedNodes[i];
           const alpha = (node.z + 1) * 0.5; 
           
           ctx.fillStyle = `hsla(30, 100%, 75%, ${alpha * visibility})`;
           ctx.beginPath();
-          ctx.arc(node.x, node.y, (node.size * 0.8) * scaleFactor, 0, TAU); // Daha büyük noktalar
+          ctx.arc(node.x, node.y, (node.size * 0.8) * scaleFactor, 0, TAU); 
           ctx.fill();
         }
 

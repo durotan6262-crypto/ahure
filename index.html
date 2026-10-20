@@ -832,7 +832,7 @@ if('serviceWorker' in navigator){
       }
 
       // ==========================================
-      // WORK MODU: SADECE KAOTİK HOLOGRAM (Ağ Yapısı)
+      // WORK MODU: KAOTİK HOLOGRAM (Kırık Lifler & Dışa Taşan Altın Teller)
       // ==========================================
       if(currentMode === "work" && visibility > 0.5){
         ctx.globalCompositeOperation = "lighter";
@@ -852,100 +852,81 @@ if('serviceWorker' in navigator){
         ctx.fillStyle = wCoreGlow;
         ctx.beginPath(); ctx.arc(0, 0, wCoreR, 0, TAU); ctx.fill();
 
-        // 2) KAOTİK LİFLER (İç yapı)
-        for(let i = 0; i < 60; i++){
+        // 2) KAOTİK LİFLER VE DIŞA TAŞAN TELLER (Resimdeki gibi)
+        for(let i = 0; i < 80; i++){
           const seed = i * 1.37;
-          const off = Math.sin(time * 0.8 + seed) * 2; 
-          const angle = time * (0.5 + (i % 3) * 0.2) + seed;
+          const off = Math.sin(time * 0.8 + seed) * 2.5; 
+          const angle = time * (0.4 + (i % 4) * 0.15) + seed;
           
-          const rBase = scale * (0.6 + Math.sin(seed * 3) * 0.35);
-          const rIn = scale * (0.2 + Math.abs(Math.cos(seed * 2)) * 0.3);
+          // Liflerin boyu (bazıları içeride, bazıları çok dışarıda)
+          const rBase = scale * (0.5 + Math.sin(seed * 3) * 0.6);
+          const rIn = scale * (0.15 + Math.abs(Math.cos(seed * 2)) * 0.35);
           
+          // Başlangıç ve bitiş (dışa doğru uzayan)
           const startX = Math.cos(angle + off) * rBase;
           const startY = Math.sin(angle + off) * rBase * 0.8;
-          const endX = Math.cos(angle + Math.PI + off) * rBase;
-          const endY = Math.sin(angle + Math.PI + off) * rBase * 0.8;
+          const endX = Math.cos(angle + Math.PI + off * 0.5) * (rBase + scale * 0.4);
+          const endY = Math.sin(angle + Math.PI + off * 0.5) * (rBase + scale * 0.4) * 0.8;
 
-          const cp1x = Math.cos(angle + 1.2) * rIn;
-          const cp1y = Math.sin(angle + 1.2) * rIn * 0.8;
+          // İçeri doğru kıvrılan kontrol noktaları
+          const cp1x = Math.cos(angle + 1.5) * rIn;
+          const cp1y = Math.sin(angle + 1.5) * rIn * 0.8;
           const cp2x = Math.cos(angle - 1.2) * rIn;
           const cp2y = Math.sin(angle - 1.2) * rIn * 0.8;
 
-          const alpha = 0.2 + Math.abs(Math.sin(time * 2 + seed)) * 0.6;
+          // Kesikli çizgi efekti (kırık teller)
+          const alpha = 0.15 + Math.abs(Math.sin(time * 3 + seed)) * 0.6;
+          ctx.strokeStyle = `hsla(${goldHue + (i%3)*8}, 100%, 60%, ${alpha * visibility})`;
+          ctx.lineWidth = (0.4 + Math.sin(seed)*0.8) * scaleFactor;
           
-          ctx.strokeStyle = `hsla(${goldHue + (i%2)*10}, 100%, 65%, ${alpha * visibility})`;
-          ctx.lineWidth = (0.5 + Math.sin(seed)*0.5) * scaleFactor;
-          
-          ctx.setLineDash([scale*0.1, scale*0.05]);
-          ctx.lineDashOffset = -time * 20; 
+          ctx.setLineDash([scale*0.15, scale*0.08]); // Uzun ve kırık
+          ctx.lineDashOffset = -time * 30; 
 
           ctx.beginPath();
           ctx.moveTo(startX, startY);
           ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, endX, endY);
           ctx.stroke();
+
+          // Liflerin uçlarındaki "elektrik yüklü" parlak noktalar
+          if (i % 3 === 0) {
+            ctx.setLineDash([]); // Nokta için düz çizgi
+            ctx.fillStyle = `hsla(${goldHue}, 100%, 85%, ${alpha * 1.5 * visibility})`;
+            ctx.beginPath();
+            ctx.arc(endX, endY, 1.5 * scaleFactor, 0, TAU);
+            ctx.fill();
+          }
         }
         ctx.setLineDash([]);
 
-        // 3) DIŞ AĞ (Elektrik şebekesi / Dünya'nın gece ışıkları etkisi)
-        // Düğümler (Nodes) oluşturuluyor
-        const nodes = [];
-        const numNodes = 48; // Çemberdeki düğüm sayısı
-        const outerRadius = scale * 1.05;
-
-        for(let i = 0; i < numNodes; i++) {
-            const angle = (i / numNodes) * TAU + (time * 0.3); // Yavaşça dönsün
-            // 3D perspektif için Y eksenini sıkıştır
-            const x = Math.cos(angle) * outerRadius;
-            const y = Math.sin(angle) * outerRadius * 0.75; 
-            // Nefes alma efekti
-            const breath = 1 + Math.sin(time * 2 + i) * 0.05;
-            nodes.push({
-                x: x * breath,
-                y: y * breath,
-                alpha: 0.4 + Math.abs(Math.sin(time * 3 + i * 1.5)) * 0.6 // Yanıp sönme
-            });
+        // 3) İÇ İÇE GEÇMİŞ HALKALAR (Hacim hissi için)
+        for(let i = 0; i < 15; i++){
+          const seed = i * 4.1;
+          const rot = time * (0.5 + (i%2)*0.3) + seed;
+          const rx = scale * (0.5 + Math.sin(seed)*0.3);
+          const ry = scale * (0.2 + Math.cos(seed)*0.2);
+          
+          ctx.strokeStyle = `hsla(${goldHue}, 100%, 70%, ${0.1 * visibility})`;
+          ctx.lineWidth = 0.8 * scaleFactor;
+          ctx.beginPath();
+          ctx.ellipse(0, 0, rx, ry, rot, 0, TAU);
+          ctx.stroke();
         }
 
-        // Düğümleri birbirine bağla (Ağ/Mesh)
-        ctx.lineWidth = 1.2 * scaleFactor;
-        for(let i = 0; i < numNodes; i++) {
-            const n1 = nodes[i];
-            const n2 = nodes[(i + 1) % numNodes]; // Yanındaki düğüm
-            const n3 = nodes[(i + 3) % numNodes]; // 3 atlayarak bağlan (karmaşık ağ hissi)
-
-            // 1. Komşuya bağla (Ana çember)
-            const grad = ctx.createLinearGradient(n1.x, n1.y, n2.x, n2.y);
-            grad.addColorStop(0, `hsla(${goldHue}, 100%, 75%, ${n1.alpha * visibility})`);
-            grad.addColorStop(1, `hsla(${goldHue}, 100%, 75%, ${n2.alpha * visibility})`);
-            ctx.strokeStyle = grad;
-            ctx.beginPath();
-            ctx.moveTo(n1.x, n1.y);
-            ctx.lineTo(n2.x, n2.y);
-            ctx.stroke();
-
-            // 2. Çapraz bağlantı (Örümcek ağı hissi)
-            ctx.strokeStyle = `hsla(${goldHue}, 100%, 60%, ${n1.alpha * 0.3 * visibility})`;
-            ctx.beginPath();
-            ctx.moveTo(n1.x, n1.y);
-            ctx.lineTo(n3.x, n3.y);
-            ctx.stroke();
-
-            // 3. Düğümün kendisi (Parlayan Gece Işığı)
-            ctx.fillStyle = `hsla(${goldHue}, 100%, 85%, ${n1.alpha * visibility})`;
-            ctx.beginPath();
-            ctx.arc(n1.x, n1.y, 2 * scaleFactor, 0, TAU);
-            ctx.fill();
-            
-            // 4. Dışa doğru kısa bir elektrik kıvılcımı (Eski çubukların yerine, ağa bağlı)
-            const outX = n1.x * 1.1;
-            const outY = n1.y * 1.1;
-            ctx.strokeStyle = `hsla(${goldHue}, 100%, 70%, ${n1.alpha * 0.5 * visibility})`;
-            ctx.lineWidth = 0.8 * scaleFactor;
-            ctx.beginPath();
-            ctx.moveTo(n1.x, n1.y);
-            ctx.lineTo(outX, outY);
-            ctx.stroke();
-            ctx.lineWidth = 1.2 * scaleFactor; // Ana çizgi kalınlığına geri dön
+        // 4) DIŞA SAVRULAN PARÇACIKLAR
+        for(let i = 0; i < 60; i++){
+          const seed = i * 7.7;
+          const r = scale * (0.6 + Math.sin(time * 1.2 + seed) * 0.7);
+          const a = time * 0.4 + seed;
+          
+          const px = Math.cos(a) * r;
+          const py = Math.sin(a) * r * 0.8;
+          
+          const pAlpha = Math.abs(Math.sin(time * 4 + seed)) * 0.8;
+          
+          ctx.fillStyle = `hsla(${goldHue}, 100%, 90%, ${pAlpha * visibility})`;
+          ctx.beginPath();
+          ctx.arc(px, py, (0.8 + Math.abs(Math.cos(seed))) * scaleFactor, 0, TAU);
+          ctx.fill();
         }
 
         ctx.restore();

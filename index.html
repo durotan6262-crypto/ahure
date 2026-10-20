@@ -341,10 +341,12 @@ if('serviceWorker' in navigator){
 
   let currentFlareAngles = [0, Math.PI];
 
+  // 3D Hologram için Düğümler (Nodes)
   let holoNodes = [];
   const NUM_NODES = 180;
   const HOLO_RADIUS = 1.0;
 
+  // 3D Düğümleri başlat
   for(let i = 0; i < NUM_NODES; i++) {
     const u = Math.random();
     const v = Math.random();
@@ -514,6 +516,7 @@ if('serviceWorker' in navigator){
       const visibility = intro;
       const scaleFactor = intro;
 
+      // Ekran temizleme
       ctx.globalCompositeOperation = "source-over";
       ctx.fillStyle = "rgba(0,3,5,.4)"; 
       ctx.fillRect(0,0,W,H);
@@ -529,6 +532,9 @@ if('serviceWorker' in navigator){
       const breathe = 1 + Math.sin(t * A.breathe) * .018 * scaleFactor;
       const spin = t * .045;
 
+      // ==========================================
+      // ESKİ VİSÖR ÇİZİMLERİ (WORK DIŞINDAKİ MODLAR İÇİN)
+      // ==========================================
       if(currentMode !== 'work') {
         for(const p of P){
           const ang = p.phase + t*p.speed*.17;
@@ -840,7 +846,7 @@ if('serviceWorker' in navigator){
       }
 
       // ==========================================
-      // WORK MODU: 3D ALTIN HOLOGRAM (Kavisli Prizmatik Matris)
+      // WORK MODU: KIRIK, DALLANAN VE KESKİN AÇILI TEL ÖRGÜ
       // ==========================================
       if(currentMode === "work" && visibility > 0.5){
         ctx.globalCompositeOperation = "lighter";
@@ -850,11 +856,11 @@ if('serviceWorker' in navigator){
         ctx.save();
         ctx.translate(cxc, cyc);
 
-        // 1) MERKEZ ENERJİ KÜRESİ (Lav Çekirdeği)
+        // 1) MERKEZ ENERJİ KÜRESİ
         const wCoreR = scale * 0.5;
         const wCoreGlow = ctx.createRadialGradient(0, 0, 0, 0, 0, wCoreR);
-        wCoreGlow.addColorStop(0, `hsla(40, 100%, 60%, ${0.8 * visibility})`);
-        wCoreGlow.addColorStop(0.5, `hsla(20, 100%, 40%, ${0.4 * visibility})`);
+        wCoreGlow.addColorStop(0, `hsla(40, 100%, 60%, ${0.6 * visibility})`);
+        wCoreGlow.addColorStop(0.5, `hsla(20, 100%, 40%, ${0.2 * visibility})`);
         wCoreGlow.addColorStop(1, "rgba(0,0,0,0)");
         ctx.fillStyle = wCoreGlow;
         ctx.beginPath(); ctx.arc(0, 0, wCoreR, 0, TAU); ctx.fill();
@@ -889,7 +895,7 @@ if('serviceWorker' in navigator){
           });
         }
 
-        // 3) DÜĞÜMLERİ BİRBİRİNE BAĞLA (Kavisli, Prizmatik Lav Renkli Teller)
+        // 3) KIRIK VE DALLANAN TELLER (Resimdeki gibi)
         for (let i = 0; i < NUM_NODES; i++) {
           const n1 = projectedNodes[i];
           const origN1 = holoNodes[i];
@@ -906,47 +912,55 @@ if('serviceWorker' in navigator){
             if (dist3D < 0.35) {
               const depthAlpha = (1 - dist3D / 0.35) * (0.2 + (n1.z + 1) * 0.5) * visibility;
               
-              // Prizmatik renk geçişi (Güneş Lavı: Kırmızı -> Turuncu -> Sarı)
-              const grad = ctx.createLinearGradient(n1.x, n1.y, n2.x, n2.y);
+              // Metalik / Bakır / Altın tonları
               const hueShift = Math.sin(i * 1.5 + j * 0.8) * 20; 
-              grad.addColorStop(0, `hsla(${15 + hueShift}, 100%, 50%, ${depthAlpha})`); 
-              grad.addColorStop(1, `hsla(${45 + hueShift}, 100%, 65%, ${depthAlpha})`); 
+              ctx.strokeStyle = `hsla(${30 + hueShift}, 80%, 50%, ${depthAlpha})`;
+              ctx.lineWidth = (0.5 + Math.random() * 1.5) * scaleFactor; // Rastgele kalınlık
 
-              ctx.strokeStyle = grad;
-              ctx.lineWidth = (1 + (n1.z + 1) * 1.5) * scaleFactor;
+              // --- KIRIK ÇİZGİ MANTIĞI (Düz değil, keskin kırılmalar) ---
+              let startX = n1.x, startY = n1.y;
+              let endX = n2.x, endY = n2.y;
               
-              // --- EĞRİLİK (BEZİER) HESAPLAMASI ---
-              // İki nokta arasındaki orta noktayı bul
-              const mx = (n1.x + n2.x) / 2;
-              const my = (n1.y + n2.y) / 2;
-              
-              // Noktalar arasındaki vektöre dik (perpendicular) bir yön bul
-              const dxn = n2.x - n1.x;
-              const dyn = n2.y - n1.y;
-              const len = Math.sqrt(dxn*dxn + dyn*dyn) || 1;
-              const nx = -dyn / len;
-              const ny = dxn / len;
-              
-              // Rastgele ama organik bir sapma (Lavın kıvrılması gibi)
-              const wobble = Math.sin(time * 2 + i * 1.5 + j * 0.8) * (dist3D * scale * 0.4); 
-              
-              const cpX = mx + nx * wobble;
-              const cpY = my + ny * wobble;
+              // Çizgiyi 3-6 parçaya böl
+              const segments = 3 + Math.floor(Math.random() * 4); 
               
               ctx.beginPath();
-              ctx.moveTo(n1.x, n1.y);
-              ctx.quadraticCurveTo(cpX, cpY, n2.x, n2.y);
+              ctx.moveTo(startX, startY);
+
+              for(let s = 1; s < segments; s++) {
+                  const tSeg = s / segments;
+                  
+                  // Noktaları rastgele saptır (kristal/çatlak görünümü)
+                  const jitterAmt = scale * 0.08; 
+                  const jx = (Math.random() - 0.5) * jitterAmt;
+                  const jy = (Math.random() - 0.5) * jitterAmt;
+                  
+                  const px = startX + (endX - startX) * tSeg + jx;
+                  const py = startY + (endY - startY) * tSeg + jy;
+                  
+                  ctx.lineTo(px, py);
+
+                  // Resimdeki gibi tellerin üzerinde "boncuklar/damlalar" oluştur
+                  if (Math.random() > 0.6) {
+                      ctx.fillStyle = `hsla(${30 + hueShift}, 100%, 65%, ${depthAlpha})`;
+                      ctx.beginPath();
+                      ctx.arc(px, py, (0.8 + Math.random()) * scaleFactor, 0, TAU);
+                      ctx.fill();
+                  }
+              }
+              
+              ctx.lineTo(endX, endY); // Son noktaya bağla
               ctx.stroke();
             }
           }
         }
 
-        // 4) DÜĞÜMLERİ ÇİZ (Halesiz, keskin prizmatik noktalar)
+        // 4) ANA DÜĞÜMLER
         for (let i = 0; i < NUM_NODES; i++) {
           const node = projectedNodes[i];
           const alpha = (node.z + 1) * 0.5; 
           
-          ctx.fillStyle = `hsla(${30 + Math.sin(i)*15}, 100%, 70%, ${alpha * visibility})`;
+          ctx.fillStyle = `hsla(${35}, 80%, 60%, ${alpha * visibility})`;
           ctx.beginPath();
           ctx.arc(node.x, node.y, node.size * scaleFactor, 0, TAU);
           ctx.fill();

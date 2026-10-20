@@ -341,18 +341,16 @@ if('serviceWorker' in navigator){
 
   let currentFlareAngles = [0, Math.PI];
 
-  // 3D Hologram için Düğümler (Nodes)
   let holoNodes = [];
   const NUM_NODES = 180;
   const HOLO_RADIUS = 1.0;
 
-  // 3D Düğümleri başlat (Küre içine rastgele dağıtılmış)
   for(let i = 0; i < NUM_NODES; i++) {
     const u = Math.random();
     const v = Math.random();
     const theta = u * TAU;
     const phi = Math.acos(2 * v - 1);
-    const r = HOLO_RADIUS * (0.6 + Math.random() * 0.4); // 0.6 - 1.0 arası yarıçap
+    const r = HOLO_RADIUS * (0.6 + Math.random() * 0.4); 
 
     holoNodes.push({
       x: r * Math.sin(phi) * Math.cos(theta),
@@ -516,7 +514,6 @@ if('serviceWorker' in navigator){
       const visibility = intro;
       const scaleFactor = intro;
 
-      // Ekran temizleme
       ctx.globalCompositeOperation = "source-over";
       ctx.fillStyle = "rgba(0,3,5,.4)"; 
       ctx.fillRect(0,0,W,H);
@@ -532,9 +529,6 @@ if('serviceWorker' in navigator){
       const breathe = 1 + Math.sin(t * A.breathe) * .018 * scaleFactor;
       const spin = t * .045;
 
-      // ==========================================
-      // ESKİ VİSÖR ÇİZİMLERİ (WORK DIŞINDAKİ MODLAR İÇİN)
-      // ==========================================
       if(currentMode !== 'work') {
         for(const p of P){
           const ang = p.phase + t*p.speed*.17;
@@ -739,7 +733,6 @@ if('serviceWorker' in navigator){
         ctx.fillStyle = core;
         ctx.beginPath(); ctx.arc(cxc, cyc, coreR, 0, TAU); ctx.fill();
 
-        // EMERGENCY: sonar halkaları
         if(currentMode === "emergency" && visibility > 0.5){
           ctx.globalCompositeOperation = "lighter";
           const ringCount = 3;
@@ -758,7 +751,6 @@ if('serviceWorker' in navigator){
           }
         }
 
-        // PROTECTION: kalkan dalgası (Petek)
         if(currentMode === "protection" && visibility > 0.5){
           const shieldPulse = (t * 0.8) % 1;
           const shieldR = shieldPulse * Math.min(W,H) * 0.55;
@@ -801,7 +793,6 @@ if('serviceWorker' in navigator){
           }
         }
 
-        // DANGER: 3 bağımsız dans eden eliptik yörünge + uydular
         if(currentMode === "danger" && visibility > 0.5){
           ctx.globalCompositeOperation = "lighter";
           const auraR = scale * (0.30 + Math.sin(t * 3.2) * 0.03);
@@ -849,7 +840,7 @@ if('serviceWorker' in navigator){
       }
 
       // ==========================================
-      // WORK MODU: 3D ALTIN HOLOGRAM (Prizmatik Matris)
+      // WORK MODU: 3D ALTIN HOLOGRAM (Kavisli Prizmatik Matris)
       // ==========================================
       if(currentMode === "work" && visibility > 0.5){
         ctx.globalCompositeOperation = "lighter";
@@ -898,7 +889,7 @@ if('serviceWorker' in navigator){
           });
         }
 
-        // 3) DÜĞÜMLERİ BİRBİRİNE BAĞLA (Düz, Prizmatik Lav Renkli Teller)
+        // 3) DÜĞÜMLERİ BİRBİRİNE BAĞLA (Kavisli, Prizmatik Lav Renkli Teller)
         for (let i = 0; i < NUM_NODES; i++) {
           const n1 = projectedNodes[i];
           const origN1 = holoNodes[i];
@@ -917,18 +908,34 @@ if('serviceWorker' in navigator){
               
               // Prizmatik renk geçişi (Güneş Lavı: Kırmızı -> Turuncu -> Sarı)
               const grad = ctx.createLinearGradient(n1.x, n1.y, n2.x, n2.y);
-              // Rastgele ama sabit bir hue kayması ile prizma etkisi
               const hueShift = Math.sin(i * 1.5 + j * 0.8) * 20; 
-              grad.addColorStop(0, `hsla(${15 + hueShift}, 100%, 50%, ${depthAlpha})`); // Kızıl/Turuncu
-              grad.addColorStop(1, `hsla(${45 + hueShift}, 100%, 65%, ${depthAlpha})`); // Altın/Sarı
+              grad.addColorStop(0, `hsla(${15 + hueShift}, 100%, 50%, ${depthAlpha})`); 
+              grad.addColorStop(1, `hsla(${45 + hueShift}, 100%, 65%, ${depthAlpha})`); 
 
               ctx.strokeStyle = grad;
-              // Sadece tek katman, keskin düz çizgi. Hale veya akan efekt yok.
               ctx.lineWidth = (1 + (n1.z + 1) * 1.5) * scaleFactor;
+              
+              // --- EĞRİLİK (BEZİER) HESAPLAMASI ---
+              // İki nokta arasındaki orta noktayı bul
+              const mx = (n1.x + n2.x) / 2;
+              const my = (n1.y + n2.y) / 2;
+              
+              // Noktalar arasındaki vektöre dik (perpendicular) bir yön bul
+              const dxn = n2.x - n1.x;
+              const dyn = n2.y - n1.y;
+              const len = Math.sqrt(dxn*dxn + dyn*dyn) || 1;
+              const nx = -dyn / len;
+              const ny = dxn / len;
+              
+              // Rastgele ama organik bir sapma (Lavın kıvrılması gibi)
+              const wobble = Math.sin(time * 2 + i * 1.5 + j * 0.8) * (dist3D * scale * 0.4); 
+              
+              const cpX = mx + nx * wobble;
+              const cpY = my + ny * wobble;
               
               ctx.beginPath();
               ctx.moveTo(n1.x, n1.y);
-              ctx.lineTo(n2.x, n2.y);
+              ctx.quadraticCurveTo(cpX, cpY, n2.x, n2.y);
               ctx.stroke();
             }
           }
@@ -939,7 +946,6 @@ if('serviceWorker' in navigator){
           const node = projectedNodes[i];
           const alpha = (node.z + 1) * 0.5; 
           
-          // Lav rengi noktalar
           ctx.fillStyle = `hsla(${30 + Math.sin(i)*15}, 100%, 70%, ${alpha * visibility})`;
           ctx.beginPath();
           ctx.arc(node.x, node.y, node.size * scaleFactor, 0, TAU);

@@ -341,12 +341,10 @@ if('serviceWorker' in navigator){
 
   let currentFlareAngles = [0, Math.PI];
 
-  // 3D Hologram için Düğümler (Nodes)
   let holoNodes = [];
   const NUM_NODES = 180;
   const HOLO_RADIUS = 1.0;
 
-  // 3D Düğümleri başlat
   for(let i = 0; i < NUM_NODES; i++) {
     const u = Math.random();
     const v = Math.random();
@@ -516,7 +514,6 @@ if('serviceWorker' in navigator){
       const visibility = intro;
       const scaleFactor = intro;
 
-      // Ekran temizleme
       ctx.globalCompositeOperation = "source-over";
       ctx.fillStyle = "rgba(0,3,5,.4)"; 
       ctx.fillRect(0,0,W,H);
@@ -532,9 +529,6 @@ if('serviceWorker' in navigator){
       const breathe = 1 + Math.sin(t * A.breathe) * .018 * scaleFactor;
       const spin = t * .045;
 
-      // ==========================================
-      // ESKİ VİSÖR ÇİZİMLERİ (WORK DIŞINDAKİ MODLAR İÇİN)
-      // ==========================================
       if(currentMode !== 'work') {
         for(const p of P){
           const ang = p.phase + t*p.speed*.17;
@@ -846,12 +840,13 @@ if('serviceWorker' in navigator){
       }
 
       // ==========================================
-      // WORK MODU: KIRIK, DALLANAN VE KESKİN AÇILI TEL ÖRGÜ
+      // WORK MODU: YAVAŞLATILMIŞ, SABİT TEL ÖRGÜ
       // ==========================================
       if(currentMode === "work" && visibility > 0.5){
         ctx.globalCompositeOperation = "lighter";
         
-        const time = t * 0.4; 
+        // Dönüş hızı ÇOK YAVAŞLATILDI (0.4 -> 0.04)
+        const time = t * 0.04; 
 
         ctx.save();
         ctx.translate(cxc, cyc);
@@ -895,7 +890,7 @@ if('serviceWorker' in navigator){
           });
         }
 
-        // 3) KIRIK VE DALLANAN TELLER (Resimdeki gibi)
+        // 3) KIRIK VE DALLANAN TELLER (Titremesiz, Sabit Kırılmalar)
         for (let i = 0; i < NUM_NODES; i++) {
           const n1 = projectedNodes[i];
           const origN1 = holoNodes[i];
@@ -912,17 +907,19 @@ if('serviceWorker' in navigator){
             if (dist3D < 0.35) {
               const depthAlpha = (1 - dist3D / 0.35) * (0.2 + (n1.z + 1) * 0.5) * visibility;
               
-              // Metalik / Bakır / Altın tonları
               const hueShift = Math.sin(i * 1.5 + j * 0.8) * 20; 
               ctx.strokeStyle = `hsla(${30 + hueShift}, 80%, 50%, ${depthAlpha})`;
-              ctx.lineWidth = (0.5 + Math.random() * 1.5) * scaleFactor; // Rastgele kalınlık
+              
+              // Kalınlık her karede değişmesin diye i ve j'ye bağlı sabit bir formül
+              const lineW = 0.5 + ((i * j) % 10) / 10 * 1.5;
+              ctx.lineWidth = lineW * scaleFactor; 
 
-              // --- KIRIK ÇİZGİ MANTIĞI (Düz değil, keskin kırılmalar) ---
+              // --- KIRIK ÇİZGİ MANTIĞI (Deterministik) ---
               let startX = n1.x, startY = n1.y;
               let endX = n2.x, endY = n2.y;
               
-              // Çizgiyi 3-6 parçaya böl
-              const segments = 3 + Math.floor(Math.random() * 4); 
+              // Segment sayısı sabit
+              const segments = 3 + ((i + j) % 4); 
               
               ctx.beginPath();
               ctx.moveTo(startX, startY);
@@ -930,26 +927,26 @@ if('serviceWorker' in navigator){
               for(let s = 1; s < segments; s++) {
                   const tSeg = s / segments;
                   
-                  // Noktaları rastgele saptır (kristal/çatlak görünümü)
+                  // Sapmalar tamamen matematiksel, rastgele değil. Böylece titremez.
                   const jitterAmt = scale * 0.08; 
-                  const jx = (Math.random() - 0.5) * jitterAmt;
-                  const jy = (Math.random() - 0.5) * jitterAmt;
+                  const jx = Math.sin(i * 12.3 + j * 4.5 + s * 7.1) * jitterAmt;
+                  const jy = Math.cos(i * 3.2 + j * 8.7 + s * 2.4) * jitterAmt;
                   
                   const px = startX + (endX - startX) * tSeg + jx;
                   const py = startY + (endY - startY) * tSeg + jy;
                   
                   ctx.lineTo(px, py);
 
-                  // Resimdeki gibi tellerin üzerinde "boncuklar/damlalar" oluştur
-                  if (Math.random() > 0.6) {
+                  // Tellerin üzerindeki boncuklar (Sabit)
+                  if ((i + j + s) % 3 === 0) {
                       ctx.fillStyle = `hsla(${30 + hueShift}, 100%, 65%, ${depthAlpha})`;
                       ctx.beginPath();
-                      ctx.arc(px, py, (0.8 + Math.random()) * scaleFactor, 0, TAU);
+                      ctx.arc(px, py, 1.2 * scaleFactor, 0, TAU);
                       ctx.fill();
                   }
               }
               
-              ctx.lineTo(endX, endY); // Son noktaya bağla
+              ctx.lineTo(endX, endY); 
               ctx.stroke();
             }
           }

@@ -150,14 +150,19 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;background:#0
   border:1px solid rgba(80,200,255,.4); color:#cfeeff;
   border-bottom-right-radius:4px;
 }
+
+/* AHURE MESAJLARI İÇİN NEON YEŞİL TEMA */
 .msg.ahure{
   align-self:flex-start; background:rgba(0,20,40,.6);
-  border:1px solid rgba(80,200,255,.35); color:#eaf7ff;
-  box-shadow:0 0 12px rgba(80,200,255,.15);
+  border:1px solid rgba(102, 255, 153, .4); 
+  color: #66ff99; /* Neon Yeşil */
+  text-shadow: 0 0 6px rgba(102, 255, 153, 0.5);
+  box-shadow:0 0 12px rgba(102, 255, 153, .15);
   border-bottom-left-radius:4px;
 }
-.msg.ahure::before{ content:'◉ '; color:#7ce; font-weight:bold; }
-.msg.typing::before{ content:'◉ '; color:#7ce; }
+.msg.ahure::before{ content:'◉ '; color:#66ff99; font-weight:bold; text-shadow: 0 0 8px rgba(102, 255, 153, 0.8); }
+.msg.typing::before{ content:'◉ '; color:#66ff99; }
+
 .msg.typing .dots span{ display:inline-block; animation:dotPulse 1.4s infinite; }
 .msg.typing .dots span:nth-child(2){ animation-delay:.2s; }
 .msg.typing .dots span:nth-child(3){ animation-delay:.4s; }
@@ -331,7 +336,7 @@ if('serviceWorker' in navigator){
 </script>
 
 <script>
-/* ===== CANVAS ANİMASYON KODU (Orijinal, Dokunulmadı) ===== */
+/* ===== CANVAS ANİMASYON KODU ===== */
 (() => {
   const c = document.getElementById("c");
   const ctx = c.getContext("2d", {alpha:false});
@@ -951,8 +956,10 @@ if('serviceWorker' in navigator){
   const apiBtn = document.getElementById('api-btn');
   let waiting = false;
 
+  // API Anahtarını tarayıcı hafızasından al
   let API_KEY = localStorage.getItem('ahure_api_key');
 
+  // Ayarlar butonuna basılınca çalışır
   if (apiBtn) {
     apiBtn.addEventListener('click', () => {
       const key = prompt("Lütfen Groq API anahtarınızı girin (gsk_... ile başlar):", API_KEY || "");
@@ -973,9 +980,10 @@ if('serviceWorker' in navigator){
 
   function addMsg(text, who){
     const el = document.createElement('div');
+    // İSİM UYUŞMAZLIĞI DÜZELTİLDİ: CSS ile aynı olması için 'ahure' kullanıyoruz
     el.className = 'msg ' + who; 
-    if(who === 'varlik typing'){
-      el.className = 'msg varlik typing';
+    if(who === 'ahure typing'){
+      el.className = 'msg ahure typing';
       el.innerHTML = '<span class="dots"><span>.</span><span>.</span><span>.</span></span>';
     } else {
       el.textContent = text;
@@ -1000,7 +1008,7 @@ if('serviceWorker' in navigator){
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          model: "llama-3.1-8b-instant", // GÜNCEL MODEL BURADA
+          model: "llama-3.1-8b-instant",
           messages: chatHistory,
           temperature: 0.7,
           max_tokens: 1024
@@ -1031,12 +1039,14 @@ if('serviceWorker' in navigator){
 
     waiting = true;
     sendBtn.disabled = true;
-    const typing = addMsg('', 'varlik typing');
+    // BURASI DA 'ahure' OLARAK DEĞİŞTİRİLDİ
+    const typing = addMsg('', 'ahure typing');
 
     const reply = await sendToGroq(text);
 
     typing.remove();
-    addMsg(reply, 'varlik');
+    // BURASI DA 'ahure' OLARAK DEĞİŞTİRİLDİ
+    addMsg(reply, 'ahure');
 
     waiting = false;
     sendBtn.disabled = false;

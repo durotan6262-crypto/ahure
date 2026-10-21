@@ -344,7 +344,6 @@ if('serviceWorker' in navigator){
   const introStart = performance.now();
   const INTRO_DURATION = 6000;
 
-  // Work Modu için Kıta Noktaları
   let workPoints = [];
   
   const MODES = {
@@ -456,14 +455,13 @@ if('serviceWorker' in navigator){
       warpStars.push({ x: (Math.random()-0.5)*2, y: (Math.random()-0.5)*2, z: 100 + Math.random()*700, a: 0.5 + Math.random()*0.5, s: 0.6 + Math.random()*1.5 });
     }
     
-    // --- KITA BAZLI NOKTA OLUŞTURMA ---
     const continents = [
-      { latMin: 25, latMax: 70, lonMin: -140, lonMax: -50, count: 25 }, // Kuzey Amerika
-      { latMin: -55, latMax: 10, lonMin: -80, lonMax: -35, count: 15 }, // Güney Amerika
-      { latMin: 35, latMax: 70, lonMin: -10, lonMax: 40, count: 30 },  // Avrupa
-      { latMin: -35, latMax: 35, lonMin: -17, lonMax: 50, count: 50 }, // Afrika
-      { latMin: 10, latMax: 75, lonMin: 40, lonMax: 180, count: 60 },  // Asya
-      { latMin: -45, latMax: -10, lonMin: 110, lonMax: 155, count: 15 } // Avustralya
+      { latMin: 25, latMax: 70, lonMin: -140, lonMax: -50, count: 25 },
+      { latMin: -55, latMax: 10, lonMin: -80, lonMax: -35, count: 15 },
+      { latMin: 35, latMax: 70, lonMin: -10, lonMax: 40, count: 30 },
+      { latMin: -35, latMax: 35, lonMin: -17, lonMax: 50, count: 50 },
+      { latMin: 10, latMax: 75, lonMin: 40, lonMax: 180, count: 60 },
+      { latMin: -45, latMax: -10, lonMin: 110, lonMax: 155, count: 15 }
     ];
 
     for (let c of continents) {
@@ -860,9 +858,6 @@ if('serviceWorker' in navigator){
         }
       }
 
-      // ==========================================
-      // WORK MODU: SADECE IŞIK, LAZER VE KITA NOKTALARI
-      // ==========================================
       if(currentMode === "work" && visibility > 0.5){
         ctx.globalCompositeOperation = "lighter";
         const time = t * 0.2;
@@ -956,10 +951,8 @@ if('serviceWorker' in navigator){
   const apiBtn = document.getElementById('api-btn');
   let waiting = false;
 
-  // API Anahtarını tarayıcı hafızasından al
   let API_KEY = localStorage.getItem('ahure_api_key');
 
-  // Ayarlar butonuna basılınca çalışır
   if (apiBtn) {
     apiBtn.addEventListener('click', () => {
       const key = prompt("Lütfen Groq API anahtarınızı girin (gsk_... ile başlar):", API_KEY || "");
@@ -994,7 +987,7 @@ if('serviceWorker' in navigator){
 
   async function sendToGroq(userText){
     if (!API_KEY) {
-      return "Lütfen sol üstteki ⚙️ (Ayarlar) butonuna tıklayıp API anahtarını gir.";
+      return "Lütfen sol üstteki ⚙️ (Ayarlar) butonuna tıklayıp geçerli bir API anahtarı girin.";
     }
 
     chatHistory.push({ role: "user", content: userText });
@@ -1007,7 +1000,7 @@ if('serviceWorker' in navigator){
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          model: "llama3-8b-8192",
+          model: "llama-3.1-8b-instant", // GÜNCEL MODEL BURADA
           messages: chatHistory,
           temperature: 0.7,
           max_tokens: 1024
@@ -1015,7 +1008,8 @@ if('serviceWorker' in navigator){
       });
 
       if (!response.ok) {
-        throw new Error("API Hatası: " + response.status);
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error?.message || "API Hatası: " + response.status);
       }
 
       const data = await response.json();
@@ -1024,8 +1018,8 @@ if('serviceWorker' in navigator){
       return reply;
 
     } catch (error) {
-      console.error(error);
-      return "Bağlantı hatası... Lütfen API anahtarınızı kontrol edin.";
+      console.error("Ahure API Hatası:", error);
+      return "Sistem hatası: " + error.message + ". Lütfen API anahtarınızı kontrol edin veya tekrar deneyin.";
     }
   }
 

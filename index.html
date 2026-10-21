@@ -330,6 +330,9 @@ if('serviceWorker' in navigator){
   const introStart = performance.now();
   const INTRO_DURATION = 6000;
 
+  // Work Modu için Noktalar
+  let workPoints = [];
+  
   const MODES = {
     idle:       { hueCycle:0, hue:200, hueSpeed:0,  pulse:2.15, breathe:0.72, star:0,  vib:0 },
     work:       { hueCycle:1, hue:200, hueSpeed:55, pulse:2.6,  breathe:1.05, star:0,  vib:0 },
@@ -412,7 +415,7 @@ if('serviceWorker' in navigator){
   }
 
   function build(){
-    P=[]; stars=[]; trails=[]; warpStars=[];
+    P=[]; stars=[]; trails=[]; warpStars=[]; workPoints=[];
     const scale = Math.min(W,H) * .235;
     const count = Math.min(900, Math.max(520, Math.floor(W*H/2600)));
     for(let i=0;i<count;i++){
@@ -437,6 +440,18 @@ if('serviceWorker' in navigator){
     }
     for(let i=0;i<250;i++){
       warpStars.push({ x: (Math.random()-0.5)*2, y: (Math.random()-0.5)*2, z: 100 + Math.random()*700, a: 0.5 + Math.random()*0.5, s: 0.6 + Math.random()*1.5 });
+    }
+    
+    // Work Modu için ülke noktalarını (Fibonacci Küresi) oluştur
+    const numPoints = 200;
+    const phi = Math.PI * (3 - Math.sqrt(5));
+    for (let i = 0; i < numPoints; i++) {
+        let y = 1 - (i / (numPoints - 1)) * 2;
+        let radius = Math.sqrt(1 - y * y);
+        let theta = phi * i;
+        let x = Math.cos(theta) * radius;
+        let z = Math.sin(theta) * radius;
+        workPoints.push({ x: x, y: y, z: z, alpha: 0.15 });
     }
   }
 
@@ -510,6 +525,9 @@ if('serviceWorker' in navigator){
       const breathe = 1 + Math.sin(t * A.breathe) * .018 * scaleFactor;
       const spin = t * .045;
 
+      // ==========================================
+      // DİĞER MODLAR (IDLE, DANGER, EMERGENCY, PROTECTION)
+      // ==========================================
       if(currentMode !== 'work') {
         for(const p of P){
           const ang = p.phase + t*p.speed*.17;
@@ -821,7 +839,7 @@ if('serviceWorker' in navigator){
       }
 
       // ==========================================
-      // WORK MODU: TAM OLARAK SENİN İSTEDİĞİN GİBİ (Hologram Dünya ve Lazer)
+      // WORK MODU: SADECE IŞIK, LAZER VE NOKTA HARİTASI
       // ==========================================
       if(currentMode === "work" && visibility > 0.5){
         ctx.globalCompositeOperation = "lighter";
@@ -836,133 +854,79 @@ if('serviceWorker' in navigator){
         ctx.fillStyle = coreGlow;
         ctx.beginPath(); ctx.arc(cxc, cyc, scale * 0.7, 0, TAU); ctx.fill();
 
-        // --- 2. ŞEFFAF DÜNYA (Hologram) ---
+        // --- 2. NOKTA HARİTASI ---
         const earthR = scale * 1.0;
         const rot = time * 0.5; 
 
-        const latCount = 7; 
-        const lonCount = 12;
-        
-        const bgEarth = ctx.createRadialGradient(cxc, cyc, 0, cxc, cyc, earthR);
-        bgEarth.addColorStop(0, `hsla(200, 100%, 50%, ${0.1 * visibility})`);
-        bgEarth.addColorStop(1, `hsla(220, 100%, 20%, ${0.05 * visibility})`);
-        ctx.fillStyle = bgEarth;
-        ctx.beginPath(); ctx.arc(cxc, cyc, earthR, 0, TAU); ctx.fill();
-
-        for(let i=0; i<lonCount; i++){
-          const lonAngle = (i / lonCount) * Math.PI;
-          ctx.beginPath();
-          for(let j=0; j<=32; j++){
-            const latAngle = -Math.PI/2 + (j/32) * Math.PI;
-            let x3d = earthR * Math.cos(latAngle) * Math.cos(lonAngle);
-            let y3d = earthR * Math.sin(latAngle);
-            let z3d = earthR * Math.cos(latAngle) * Math.sin(lonAngle);
-            
-            let rx = x3d * Math.cos(rot) - z3d * Math.sin(rot);
-            let rz = x3d * Math.sin(rot) + z3d * Math.cos(rot);
-            
-            const proj = 1 + rz / (earthR * 2); 
-            const px = cxc + rx * proj;
-            const py = cyc + y3d * proj;
-            
-            if(j === 0) ctx.moveTo(px, py);
-            else ctx.lineTo(px, py);
-          }
-          ctx.strokeStyle = `hsla(190, 100%, 70%, ${0.25 * visibility})`;
-          ctx.lineWidth = 1 * scaleFactor;
-          ctx.stroke();
-        }
-        
-        for(let i=1; i<latCount; i++){
-          const latAngle = -Math.PI/2 + (i/latCount) * Math.PI;
-          const r = earthR * Math.cos(latAngle);
-          const y = earthR * Math.sin(latAngle);
-          
-          ctx.beginPath();
-          for(let j=0; j<=48; j++){
-            const lonAngle = (j/48) * TAU;
-            let x3d = r * Math.cos(lonAngle);
-            let z3d = r * Math.sin(lonAngle);
-            
-            let rx = x3d * Math.cos(rot) - z3d * Math.sin(rot);
-            let rz = x3d * Math.sin(rot) + z3d * Math.cos(rot);
-            
-            const proj = 1 + rz / (earthR * 2);
-            const px = cxc + rx * proj;
-            const py = cyc + y * proj;
-            
-            if(j === 0) ctx.moveTo(px, py);
-            else ctx.lineTo(px, py);
-          }
-          ctx.strokeStyle = `hsla(190, 100%, 70%, ${0.2 * visibility})`;
-          ctx.lineWidth = 1 * scaleFactor;
-          ctx.stroke();
-        }
-
-        // --- 3. DIŞ VERİ HALKALARI ---
-        for(let i=0; i<2; i++){
-          const ringR = earthR * (1.15 + i*0.15);
-          ctx.save();
-          ctx.translate(cxc, cyc);
-          ctx.rotate(time * (0.3 + i*0.2) * (i===0?1:-1));
-          
-          ctx.strokeStyle = `hsla(190, 100%, 60%, ${0.3 * visibility})`;
-          ctx.lineWidth = 1.5 * scaleFactor;
-          ctx.beginPath();
-          ctx.ellipse(0, 0, ringR, ringR * 0.3, 0, 0, TAU);
-          ctx.stroke();
-          
-          for(let k=0; k<4; k++){
-            const ang = (k/4) * TAU + time * 2;
-            const ux = Math.cos(ang) * ringR;
-            const uy = Math.sin(ang) * ringR * 0.3;
-            ctx.fillStyle = `hsla(190, 100%, 85%, ${0.8 * visibility})`;
-            ctx.beginPath(); ctx.arc(ux, uy, 2.5 * scaleFactor, 0, TAU); ctx.fill();
-          }
-          ctx.restore();
-        }
-
-        // --- 4. LAZER TARAYICI (İŞTE BURASI!) ---
+        // Lazer pozisyonu
         const scanY = Math.sin(t * 2) * earthR; 
-        const scanR = Math.sqrt(earthR*earthR - scanY*scanY);
-        
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(cxc, cyc, earthR, 0, TAU);
-        ctx.clip(); // Dünya dışına taşmasın
-        
-        ctx.fillStyle = `rgba(150, 255, 255, ${0.15 * visibility})`;
-        ctx.fillRect(cxc - earthR, cyc + scanY - 5, earthR*2, 10);
-        
-        ctx.strokeStyle = `rgba(150, 255, 255, ${0.8 * visibility})`;
-        ctx.lineWidth = 1.5 * scaleFactor;
-        ctx.beginPath();
-        ctx.ellipse(cxc, cyc + scanY, scanR, scanR * 0.15, 0, 0, TAU);
-        ctx.stroke();
-        ctx.restore();
 
-        // --- 5. VERİ SIÇRAMALARI (Data Arcs) ---
-        for(let i=0; i<6; i++){
-          const arcTime = (t * 1.5 + i) % 3; 
-          if(arcTime > 1) continue; 
-          
-          const angle = i * (TAU / 6);
-          const startX = cxc + Math.cos(angle) * earthR;
-          const startY = cyc + Math.sin(angle) * earthR * 0.6;
-          
-          const len = earthR * (0.3 + arcTime * 0.5);
-          const endX = cxc + Math.cos(angle) * (earthR + len);
-          const endY = cyc + Math.sin(angle) * (earthR + len) * 0.6;
-          
-          const cpX = cxc + Math.cos(angle + 0.5) * (earthR + len);
-          const cpY = cyc + Math.sin(angle + 0.5) * (earthR + len) * 0.6;
-          
-          ctx.strokeStyle = `hsla(190, 100%, 80%, ${(1 - arcTime) * visibility})`;
-          ctx.lineWidth = 1 * scaleFactor;
-          ctx.beginPath();
-          ctx.moveTo(startX, startY);
-          ctx.quadraticCurveTo(cpX, cpY, endX, endY);
-          ctx.stroke();
+        // Noktaları çiz
+        for (let p of workPoints) {
+            // Döndürme
+            let rx = p.x * Math.cos(rot) - p.z * Math.sin(rot);
+            let rz = p.x * Math.sin(rot) + p.z * Math.cos(rot);
+            let ry = p.y;
+
+            // İzdüşüm
+            const proj = 1 + rz / (earthR * 2);
+            const px = cxc + rx * earthR * proj;
+            const py = cyc + ry * earthR * proj;
+
+            // Lazer kontrolü
+            let dist = Math.abs(py - scanY);
+            let targetAlpha = (rz > 0) ? 0.2 : 0.05; // Ön yüz arkaya göre daha parlak
+
+            // Lazer üzerinden geçiyorsa parlat
+            if (dist < 20) {
+                targetAlpha = 1.0; 
+            }
+
+            // Yumuşak sönme/parlama efekti
+            p.alpha += (targetAlpha - p.alpha) * 0.08;
+
+            // Noktayı çiz
+            if (p.alpha > 0.02) {
+                ctx.fillStyle = `rgba(150, 255, 255, ${p.alpha * visibility})`;
+                ctx.beginPath();
+                // Lazer üzerindeyse boyutu büyüt
+                const size = dist < 20 ? 4 : 2;
+                ctx.arc(px, py, size * scaleFactor, 0, TAU);
+                ctx.fill();
+            }
+        }
+
+        // --- 3. LAZER TARAYICI ---
+        const scanR = Math.sqrt(Math.max(0, earthR*earthR - scanY*scanY));
+        
+        if (scanR > 0) {
+            ctx.save();
+            ctx.beginPath();
+            // Lazerin daire dışına taşmaması için kırpma işlemi
+            ctx.arc(cxc, cyc, earthR, 0, TAU);
+            ctx.clip(); 
+            
+            // Lazerin arkasındaki hafif parlaklık
+            const trailGrad = ctx.createLinearGradient(cxc, scanY, cxc, scanY - 50);
+            trailGrad.addColorStop(0, `rgba(150, 255, 255, ${0.2 * visibility})`);
+            trailGrad.addColorStop(1, `rgba(0,0,0,0)`);
+            ctx.fillStyle = trailGrad;
+            ctx.fillRect(cxc - earthR, scanY - 50, earthR * 2, 50);
+
+            // Lazer çizgisi
+            ctx.strokeStyle = `rgba(200, 255, 255, ${0.9 * visibility})`;
+            ctx.lineWidth = 2 * scaleFactor;
+            ctx.beginPath();
+            ctx.ellipse(cxc, cyc + scanY, scanR, scanR * 0.15, 0, 0, TAU);
+            ctx.stroke();
+            
+            // Lazerin merkezindeki parlak nokta
+            ctx.fillStyle = `rgba(255, 255, 255, ${1 * visibility})`;
+            ctx.beginPath();
+            ctx.arc(cxc, cyc + scanY, 3 * scaleFactor, 0, TAU);
+            ctx.fill();
+
+            ctx.restore();
         }
       }
 

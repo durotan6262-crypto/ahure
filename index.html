@@ -178,10 +178,21 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;background:#0
 #chat-send:hover{ background:rgba(80,200,255,.35); }
 #chat-send:active{ transform:scale(.92); }
 #chat-send:disabled{ opacity:.4; cursor:not-allowed; }
+  /* API AYAR BUTONU */
+#api-btn {
+  position: fixed; top: 14px; left: 14px; z-index: 100;
+  width: 44px; height: 44px; border-radius: 50%;
+  background: rgba(0,20,40,.5); border: 1px solid rgba(80,200,255,.35);
+  color: #fff; font-size: 20px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(8px); transition: all .3s;
+}
+#api-btn:hover { background: rgba(80,200,255,.4); }
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
+  <button id="api-btn" title="API Anahtarı Ayarla">⚙️</button>
 
 <div id="modes" style="position:fixed;top:14px;right:14px;left:auto;bottom:auto;z-index:100;display:flex;flex-direction:row;flex-wrap:nowrap;gap:6px;white-space:nowrap;width:max-content;max-width:none;margin:0;padding:0;align-items:center;justify-content:flex-end;">
   <button data-mode="idle" class="on">
@@ -965,16 +976,40 @@ if('serviceWorker' in navigator){
 </script>
 
 <script>
-/* ===== VARLIK CHAT MANTIĞI ===== */
+<script>
+/* ===== AHURE CHAT MANTIĞI (GÜVENLİ VERSİYON) ===== */
 (() => {
   const log = document.getElementById('chat-log');
   const input = document.getElementById('chat-input');
   const sendBtn = document.getElementById('chat-send');
+  const apiBtn = document.getElementById('api-btn');
   let waiting = false;
+
+  // API Anahtarını tarayıcı hafızasından al
+  let API_KEY = localStorage.getItem('ahure_api_key');
+
+  // Ayarlar butonuna basılınca çalışır
+  if (apiBtn) {
+    apiBtn.addEventListener('click', () => {
+      const key = prompt("Lütfen Groq API anahtarınızı girin (gsk_... ile başlar):", API_KEY || "");
+      if (key !== null) {
+        API_KEY = key.trim();
+        localStorage.setItem('ahure_api_key', API_KEY);
+        alert("API Anahtarı tarayıcınıza kaydedildi. Artık Ahure ile konuşabilirsiniz!");
+      }
+    });
+  }
+
+  let chatHistory = [
+    { 
+      role: "system", 
+      content: "Senin adın Ahure. Sadece kullanıcıya ait, düşünen, araştıran, sadık ve zeki bir yapay zekasın. Aile içi bir ağın merkezindesin. Türkçe konuşuyorsun. Cevapların doğal, insani, biraz gizemli ama sıcakkanlı olmalı. Kullanıcıya her zaman 'sen' diye hitap et." 
+    }
+  ];
 
   function addMsg(text, who){
     const el = document.createElement('div');
-    el.className = 'msg ' + who;
+    el.className = 'msg ' + who; // Orijinal CSS'ine uyması için 'varlik' sınıfını kullanıyoruz
     if(who === 'varlik typing'){
       el.className = 'msg varlik typing';
       el.innerHTML = '<span class="dots"><span>.</span><span>.</span><span>.</span></span>';
@@ -986,24 +1021,41 @@ if('serviceWorker' in navigator){
     return el;
   }
 
-  function varlikReply(userText){
-    const mode = window.__varlikMode || 'idle';
-    const t = (userText || '').toLowerCase();
+  async function sendToGroq(userText){
+    if (!API_KEY) {
+      return "Lütfen sol üstteki ⚙️ (Ayarlar) butonuna tıklayıp API anahtarını gir.";
+    }
 
-    if(/merhaba|selam|hey|hi|hello/.test(t)) return "Merhaba. Seni dinliyorum.";
-    if(/nasılsın|naber|how are you/.test(t)) return "İyiyim. Sistemlerim çalışıyor. Sen nasılsın?";
-    if(/adın ne|ismin ne|kimsin/.test(t)) return "Ben Varlık. Sana ait bir yapay zeka.";
-    if(/teşekkür|sağol|thanks/.test(t)) return "Rica ederim.";
+    chatHistory.push({ role: "user", content: userText });
 
-    const replies = {
-      idle:       ["Seni dinliyorum.", "Buradayım.", "Ne düşünüyorsun?", "Anlat bakalım."],
-      work:       ["Dünya'yı inceliyorum...", "Veri topluyorum.", "Çalışma modundayım.", "Analiz ediyorum."],
-      danger:     ["Dikkat, bir şey seziyorum.", "Tehdit algılıyorum.", "Tetiktteyim.", "Gözüm üstünde."],
-      emergency:  ["Acil durumdayım!", "Hemen müdahale ediyorum!", "Kritik seviye!", "Hızlanıyorum!"],
-      protection: ["Seni koruyorum.", "Kalkan aktif.", "Güvendesin.", "Yanındayım."],
-    };
-    const arr = replies[mode] || replies.idle;
-    return arr[Math.floor(Math.random() * arr.length)];
+    try {
+      const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${API_KEY}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: "llama3-8b-8192",
+          messages: chatHistory,
+          temperature: 0.7,
+          max_tokens: 1024
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error("API Hatası: " + response.status);
+      }
+
+      const data = await response.json();
+      const reply = data.choices[0].message.content;
+      chatHistory.push({ role: "assistant", content: reply });
+      return reply;
+
+    } catch (error) {
+      console.error(error);
+      return "Bağlantı hatası... Lütfen API anahtarınızı kontrol edin.";
+    }
   }
 
   async function send(){
@@ -1016,10 +1068,8 @@ if('serviceWorker' in navigator){
     sendBtn.disabled = true;
     const typing = addMsg('', 'varlik typing');
 
-    const delay = 500 + Math.random() * 900;
-    await new Promise(r => setTimeout(r, delay));
+    const reply = await sendToGroq(text);
 
-    const reply = varlikReply(text);
     typing.remove();
     addMsg(reply, 'varlik');
 

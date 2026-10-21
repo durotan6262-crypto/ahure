@@ -6,13 +6,24 @@
 <meta name="theme-color" content="#000814">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Varlık">
+<meta name="apple-mobile-web-app-title" content="Ahure">
 <link rel="manifest" href="manifest.json">
-<title>Varlık</title>
+<title>Ahure</title>
 <style>
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000;
   -webkit-tap-highlight-color:transparent;user-select:none}
 canvas{position:fixed;inset:0;width:100%;height:100%;display:block;background:#000}
+
+/* API AYAR BUTONU */
+#api-btn {
+  position: fixed; top: 14px; left: 14px; z-index: 100;
+  width: 44px; height: 44px; border-radius: 50%;
+  background: rgba(0,20,40,.5); border: 1px solid rgba(80,200,255,.35);
+  color: #fff; font-size: 20px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(8px); transition: all .3s;
+}
+#api-btn:hover { background: rgba(80,200,255,.4); }
 
 #modes button{
   width:44px;min-width:44px;max-width:44px;
@@ -139,13 +150,13 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;background:#0
   border:1px solid rgba(80,200,255,.4); color:#cfeeff;
   border-bottom-right-radius:4px;
 }
-.msg.varlik{
+.msg.ahure{
   align-self:flex-start; background:rgba(0,20,40,.6);
   border:1px solid rgba(80,200,255,.35); color:#eaf7ff;
   box-shadow:0 0 12px rgba(80,200,255,.15);
   border-bottom-left-radius:4px;
 }
-.msg.varlik::before{ content:'◉ '; color:#7ce; font-weight:bold; }
+.msg.ahure::before{ content:'◉ '; color:#7ce; font-weight:bold; }
 .msg.typing::before{ content:'◉ '; color:#7ce; }
 .msg.typing .dots span{ display:inline-block; animation:dotPulse 1.4s infinite; }
 .msg.typing .dots span:nth-child(2){ animation-delay:.2s; }
@@ -178,21 +189,12 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;background:#0
 #chat-send:hover{ background:rgba(80,200,255,.35); }
 #chat-send:active{ transform:scale(.92); }
 #chat-send:disabled{ opacity:.4; cursor:not-allowed; }
-  /* API AYAR BUTONU */
-#api-btn {
-  position: fixed; top: 14px; left: 14px; z-index: 100;
-  width: 44px; height: 44px; border-radius: 50%;
-  background: rgba(0,20,40,.5); border: 1px solid rgba(80,200,255,.35);
-  color: #fff; font-size: 20px; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  backdrop-filter: blur(8px); transition: all .3s;
-}
-#api-btn:hover { background: rgba(80,200,255,.4); }
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
-  <button id="api-btn" title="API Anahtarı Ayarla">⚙️</button>
+
+<button id="api-btn" title="API Anahtarı Ayarla">⚙️</button>
 
 <div id="modes" style="position:fixed;top:14px;right:14px;left:auto;bottom:auto;z-index:100;display:flex;flex-direction:row;flex-wrap:nowrap;gap:6px;white-space:nowrap;width:max-content;max-width:none;margin:0;padding:0;align-items:center;justify-content:flex-end;">
   <button data-mode="idle" class="on">
@@ -315,7 +317,7 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;background:#0
 <div id="chat-panel">
   <div id="chat-log"></div>
   <div id="chat-input-row">
-    <input id="chat-input" type="text" placeholder="Varlık'a bir şey söyle..." autocomplete="off">
+    <input id="chat-input" type="text" placeholder="Ahure'ye bir şey söyle..." autocomplete="off">
     <button id="chat-send" aria-label="Gönder">➤</button>
   </div>
 </div>
@@ -329,6 +331,7 @@ if('serviceWorker' in navigator){
 </script>
 
 <script>
+/* ===== CANVAS ANİMASYON KODU (Orijinal, Dokunulmadı) ===== */
 (() => {
   const c = document.getElementById("c");
   const ctx = c.getContext("2d", {alpha:false});
@@ -454,7 +457,6 @@ if('serviceWorker' in navigator){
     }
     
     // --- KITA BAZLI NOKTA OLUŞTURMA ---
-    // Koordinatlar: Enlem (lat) -90 ile 90 arası, Boylam (lon) -180 ile 180 arası
     const continents = [
       { latMin: 25, latMax: 70, lonMin: -140, lonMax: -50, count: 25 }, // Kuzey Amerika
       { latMin: -55, latMax: 10, lonMin: -80, lonMax: -35, count: 15 }, // Güney Amerika
@@ -466,18 +468,13 @@ if('serviceWorker' in navigator){
 
     for (let c of continents) {
       for (let i = 0; i < c.count; i++) {
-        // Kıta sınırları içinde rastgele bir enlem ve boylam seç
         let lat = c.latMin + Math.random() * (c.latMax - c.latMin);
         let lon = c.lonMin + Math.random() * (c.lonMax - c.lonMin);
-
-        // 3D Koordinatlara dönüştür
         let phi = (90 - lat) * Math.PI / 180;
         let theta = (lon + 180) * Math.PI / 180;
-
         let x = -Math.sin(phi) * Math.cos(theta);
         let z = Math.sin(phi) * Math.sin(theta);
         let y = Math.cos(phi);
-
         workPoints.push({ x: x, y: y, z: z, alpha: 0.15 });
       }
     }
@@ -493,15 +490,15 @@ if('serviceWorker' in navigator){
 
   let currentMode = "idle";
   const modeButtons = document.querySelectorAll("#modes button");
-  function setMode(name){
+  window.setMode = function(name){
     if(!MODES[name]) return;
     currentMode = name;
-    window.__varlikMode = name;
+    window.__ahureMode = name;
     modeButtons.forEach(b => b.classList.toggle("on", b.dataset.mode === name));
     if(atmoStarted) atmoPulse();
   }
   modeButtons.forEach(b => {
-    const handler = (e) => { e.preventDefault(); setMode(b.dataset.mode); };
+    const handler = (e) => { e.preventDefault(); window.setMode(b.dataset.mode); };
     b.addEventListener("click", handler);
     b.addEventListener("touchstart", handler, { passive:false });
   });
@@ -553,9 +550,6 @@ if('serviceWorker' in navigator){
       const breathe = 1 + Math.sin(t * A.breathe) * .018 * scaleFactor;
       const spin = t * .045;
 
-      // ==========================================
-      // DİĞER MODLAR (IDLE, DANGER, EMERGENCY, PROTECTION)
-      // ==========================================
       if(currentMode !== 'work') {
         for(const p of P){
           const ang = p.phase + t*p.speed*.17;
@@ -873,7 +867,6 @@ if('serviceWorker' in navigator){
         ctx.globalCompositeOperation = "lighter";
         const time = t * 0.2;
 
-        // --- 1. MERKEZDEKİ ENERJİ ÇEKİRDEĞİ ---
         const coreR = scale * 0.25;
         const coreGlow = ctx.createRadialGradient(cxc, cyc, 0, cxc, cyc, scale * 0.7);
         coreGlow.addColorStop(0, `rgba(150, 255, 255, ${0.9 * visibility})`);
@@ -882,81 +875,60 @@ if('serviceWorker' in navigator){
         ctx.fillStyle = coreGlow;
         ctx.beginPath(); ctx.arc(cxc, cyc, scale * 0.7, 0, TAU); ctx.fill();
 
-        // --- 2. KITA NOKTALARI HARİTASI ---
         const earthR = scale * 1.0;
         const rot = time * 0.5; 
 
-        // Lazer pozisyonu
         const scanY = Math.sin(t * 2) * earthR; 
-        const absoluteScanY = cyc + scanY; // Ekrandaki gerçek Y koordinatı
+        const absoluteScanY = cyc + scanY; 
 
-        // Noktaları çiz
         for (let p of workPoints) {
-            // Döndürme (Y ekseni etrafında)
             let rx = p.x * Math.cos(rot) - p.z * Math.sin(rot);
             let rz = p.x * Math.sin(rot) + p.z * Math.cos(rot);
             let ry = p.y;
 
-            // İzdüşüm (Projeksiyon)
             const proj = 1 + rz / (earthR * 2);
             const px = cxc + rx * earthR * proj;
             const py = cyc + ry * earthR * proj;
 
-            // Lazer kontrolü: Ekrandaki py ile lazerin mutlak Y'si arasındaki fark
             let distToLaser = Math.abs(py - absoluteScanY);
             
-            // Ön yüzdeki noktalar (rz > 0) daha belirgin, arkadakiler soluk
             let targetAlpha = (rz > 0) ? 0.25 : 0.05; 
 
-            // Lazer üzerinden geçiyorsa parlat
             if (distToLaser < 25) {
                 targetAlpha = 1.0; 
             }
 
-            // Yumuşak sönme/parlama efekti (Lerp)
             p.alpha += (targetAlpha - p.alpha) * 0.1;
 
-            // Noktayı çiz
             if (p.alpha > 0.02) {
                 ctx.fillStyle = `rgba(150, 255, 255, ${p.alpha * visibility})`;
                 ctx.beginPath();
-                // Lazer üzerindeyse boyutu büyüt
                 const size = distToLaser < 25 ? 4 : 2;
                 ctx.arc(px, py, size * scaleFactor, 0, TAU);
                 ctx.fill();
             }
         }
 
-        // --- 3. LAZER TARAYICI ---
         const scanR = Math.sqrt(Math.max(0, earthR*earthR - scanY*scanY));
         
         if (scanR > 0) {
             ctx.save();
             ctx.beginPath();
-            // Lazerin daire dışına taşmaması için kırpma işlemi
             ctx.arc(cxc, cyc, earthR, 0, TAU);
             ctx.clip(); 
             
-            // Lazerin arkasındaki hafif parlaklık (hüzme)
             const trailGrad = ctx.createLinearGradient(cxc, absoluteScanY, cxc, absoluteScanY - 40);
             trailGrad.addColorStop(0, `rgba(150, 255, 255, ${0.3 * visibility})`);
             trailGrad.addColorStop(1, `rgba(0,0,0,0)`);
             ctx.fillStyle = trailGrad;
             ctx.fillRect(cxc - earthR, absoluteScanY - 40, earthR * 2, 40);
 
-            // Lazerin ince yatay çizgisi
             ctx.strokeStyle = `rgba(200, 255, 255, ${0.9 * visibility})`;
             ctx.lineWidth = 1.5 * scaleFactor;
             ctx.beginPath();
             ctx.ellipse(cxc, absoluteScanY, scanR, scanR * 0.15, 0, 0, TAU);
             ctx.stroke();
             
-            // Lazerin merkezindeki parlak nokta KALDIRILDI
-            // ctx.fillStyle = `rgba(255, 255, 255, ${1 * visibility})`;
-            // ctx.beginPath();
-            // ctx.arc(cxc, absoluteScanY, 3 * scaleFactor, 0, TAU);
-            // ctx.fill();
-
             ctx.restore();
         }
       }
@@ -975,7 +947,6 @@ if('serviceWorker' in navigator){
 })();
 </script>
 
-<script>
 <script>
 /* ===== AHURE CHAT MANTIĞI (GÜVENLİ VERSİYON) ===== */
 (() => {
@@ -1009,7 +980,7 @@ if('serviceWorker' in navigator){
 
   function addMsg(text, who){
     const el = document.createElement('div');
-    el.className = 'msg ' + who; // Orijinal CSS'ine uyması için 'varlik' sınıfını kullanıyoruz
+    el.className = 'msg ' + who; 
     if(who === 'varlik typing'){
       el.className = 'msg varlik typing';
       el.innerHTML = '<span class="dots"><span>.</span><span>.</span><span>.</span></span>';

@@ -207,6 +207,34 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;background:#0
 #chat-send:hover{ background:rgba(80,200,255,.35); }
 #chat-send:active{ transform:scale(.92); }
 #chat-send:disabled{ opacity:.4; cursor:not-allowed; }
+  /* AYARLAR MODALI */
+#settings-modal {
+  position: fixed; inset: 0; z-index: 1000; display: none;
+  align-items: center; justify-content: center;
+  background: rgba(0,5,10,.75); backdrop-filter: blur(5px);
+}
+#settings-modal.open { display: flex; }
+.settings-box {
+  background: rgba(0,20,40,.85); border: 1px solid rgba(80,200,255,.4);
+  border-radius: 16px; padding: 24px; width: 90%; max-width: 400px;
+  backdrop-filter: blur(12px); box-shadow: 0 10px 30px rgba(0,0,0,.5);
+  display: flex; flex-direction: column; gap: 12px;
+}
+.settings-box h3 { margin: 0 0 8px 0; color: #cfeeff; font-size: 16px; font-weight: 500; text-align: center; }
+.settings-box input {
+  background: rgba(0,0,0,.3); border: 1px solid rgba(80,200,255,.2);
+  border-radius: 8px; padding: 12px; color: #fff; outline: none; font-size: 14px;
+}
+.settings-box input:focus { border-color: #66ff99; }
+.settings-actions { display: flex; gap: 8px; margin-top: 8px; }
+.settings-actions button {
+  flex: 1; padding: 10px; border-radius: 8px; border: none; cursor: pointer;
+  font-weight: bold; transition: all .2s; font-size: 14px;
+}
+#btn-save-set { background: rgba(102,255,153,.2); color: #66ff99; border: 1px solid rgba(102,255,153,.4); }
+#btn-save-set:hover { background: rgba(102,255,153,.4); }
+#btn-cancel-set { background: rgba(255,255,255,.1); color: #ccc; }
+#btn-cancel-set:hover { background: rgba(255,255,255,.2); }
 </style>
 </head>
 <body>
@@ -340,6 +368,18 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;background:#0
   </div>
 </div>
 
+<div id="settings-modal">
+  <div class="settings-box">
+    <h3>⚙️ Ahure Ayarları</h3>
+    <input type="password" id="set-api-key" placeholder="Groq API Anahtarı (gsk_...)">
+    <input type="text" id="set-proxy-url" placeholder="Proxy URL (İsteğe Bağlı - Örn: http://ahure-pc:3000)">
+    <div class="settings-actions">
+      <button id="btn-cancel-set">İptal</button>
+      <button id="btn-save-set">Kaydet</button>
+    </div>
+  </div>
+</div>
+  
 <div id="err"></div>
 
 <script>
@@ -961,33 +1001,57 @@ if('serviceWorker' in navigator){
 </script>
 
 <script>
-/* ===== AHURE CHAT MANTIĞI (GÜVENLİ VERSİYON) ===== */
+/* ===== AHURE CHAT MANTIĞI (GÜNCEL) ===== */
 (() => {
   const log = document.getElementById('chat-log');
   const input = document.getElementById('chat-input');
   const sendBtn = document.getElementById('chat-send');
   const apiBtn = document.getElementById('api-btn');
+  
+  // Ayarlar Modalı
+  const modal = document.getElementById('settings-modal');
+  const inApiKey = document.getElementById('set-api-key');
+  const inProxyUrl = document.getElementById('set-proxy-url');
+  const btnSave = document.getElementById('btn-save-set');
+  const btnCancel = document.getElementById('btn-cancel-set');
+
   let waiting = false;
 
-  let API_KEY = localStorage.getItem('ahure_api_key');
+  // Hafızadan API ve Proxy ayarlarını yükle
+  let API_KEY = localStorage.getItem('ahure_api_key') || '';
+  let PROXY_URL = localStorage.getItem('ahure_proxy_url') || '';
 
+  // Ayarlar Butonu Tıklanınca
   if (apiBtn) {
     apiBtn.addEventListener('click', () => {
-      const key = prompt("Lütfen Groq API anahtarınızı girin (gsk_... ile başlar):", API_KEY || "");
-      if (key !== null) {
-        API_KEY = key.trim();
-        localStorage.setItem('ahure_api_key', API_KEY);
-        alert("API Anahtarı tarayıcınıza kaydedildi. Artık Ahure ile konuşabilirsiniz!");
-      }
+      inApiKey.value = API_KEY;
+      inProxyUrl.value = PROXY_URL;
+      modal.classList.add('open');
     });
   }
 
-  let chatHistory = [
+  btnCancel.addEventListener('click', () => modal.classList.remove('open'));
+  btnSave.addEventListener('click', () => {
+    API_KEY = inApiKey.value.trim();
+    PROXY_URL = inProxyUrl.value.trim();
+    localStorage.setItem('ahure_api_key', API_KEY);
+    localStorage.setItem('ahure_proxy_url', PROXY_URL);
+    modal.classList.remove('open');
+  });
+
+  // Sohbet Geçmişi Yükleme
+  let chatHistory = JSON.parse(localStorage.getItem('ahure_chat_history')) || [
     { 
       role: "system", 
       content: "Senin adın Ahure. Sadece kullanıcıya ait, düşünen, araştıran, sadık ve zeki bir yapay zekasın. Aile içi bir ağın merkezindesin. Türkçe konuşuyorsun. Cevapların doğal, insani, biraz gizemli ama sıcakkanlı olmalı. Kullanıcıya her zaman 'sen' diye hitap et." 
     }
   ];
+
+  function saveHistory() {
+    // Sadece son 20 mesajı sakla ki localStorage şişmesin (system prompt her zaman kalır)
+    if (chatHistory.length > 21) chatHistory = [chatHistory[0], ...chatHistory.slice(-20)];
+    localStorage.setItem('ahure_chat_history', JSON.stringify(chatHistory));
+  }
 
   function addMsg(text, who){
     const el = document.createElement('div');
@@ -1003,22 +1067,39 @@ if('serviceWorker' in navigator){
     return el;
   }
 
-  async function sendToGroq(userText){
-    if (!API_KEY) {
-      return "Lütfen sol üstteki ⚙️ (Ayarlar) butonuna tıklayıp geçerli bir API anahtarı girin.";
+  // Sayfa açıldığında geçmiş mesajları ekrana bas
+  function renderHistory() {
+    log.innerHTML = '';
+    // System prompt'u atla
+    for (let i = 1; i < chatHistory.length; i++) {
+      const msg = chatHistory[i];
+      addMsg(msg.content, msg.role === 'user' ? 'user' : 'ahure');
     }
+  }
+  renderHistory();
 
+  async function sendToGroq(userText){
     chatHistory.push({ role: "user", content: userText });
 
     try {
-      const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      let url, headers = { "Content-Type": "application/json" };
+      
+      if (PROXY_URL) {
+        // Ev sunucusu (Proxy) üzerinden gönder
+        url = PROXY_URL.endsWith('/chat') ? PROXY_URL : PROXY_URL + '/chat';
+        // İleride proxy'ye bir token eklersek buraya Authorization eklenebilir
+      } else {
+        // Doğrudan Groq'a gönder (Proxy yoksa)
+        if (!API_KEY) return "Lütfen ayarlardan API anahtarınızı girin.";
+        url = "https://api.groq.com/openai/v1/chat/completions";
+        headers["Authorization"] = `Bearer ${API_KEY}`;
+      }
+
+      const response = await fetch(url, {
         method: "POST",
-        headers: {
-          "Authorization": `Bearer ${API_KEY}`,
-          "Content-Type": "application/json"
-        },
+        headers: headers,
         body: JSON.stringify({
-          model: "openai/gpt-oss-120b", // Güncel model
+          model: "openai/gpt-oss-120b",
           messages: chatHistory,
           temperature: 0.7,
           max_tokens: 1024
@@ -1027,17 +1108,18 @@ if('serviceWorker' in navigator){
 
       if (!response.ok) {
         const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.error?.message || "API Hatası: " + response.status);
+        throw new Error(errData.error?.message || "Bağlantı Hatası: " + response.status);
       }
 
       const data = await response.json();
       const reply = data.choices[0].message.content;
       chatHistory.push({ role: "assistant", content: reply });
+      saveHistory();
       return reply;
 
     } catch (error) {
       console.error("Ahure API Hatası:", error);
-      return "Sistem hatası: " + error.message + ". Lütfen API anahtarınızı kontrol edin veya tekrar deneyin.";
+      return "Sistem hatası: " + error.message + ". Lütfen bağlantınızı veya ayarlarınızı kontrol edin.";
     }
   }
 

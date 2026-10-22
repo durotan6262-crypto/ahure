@@ -235,6 +235,13 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;background:#0
 #btn-save-set:hover { background: rgba(102,255,153,.4); }
 #btn-cancel-set { background: rgba(255,255,255,.1); color: #ccc; }
 #btn-cancel-set:hover { background: rgba(255,255,255,.2); }
+#chat-clear {
+  background: transparent; border: none; color: rgba(255,80,80,.6);
+  cursor: pointer; font-size: 16px; padding: 8px 12px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .2s; flex-shrink: 0;
+}
+#chat-clear:hover { color: #ff4d4d; text-shadow: 0 0 8px #ff4d4d; }
 </style>
 </head>
 <body>
@@ -1143,6 +1150,26 @@ if('serviceWorker' in navigator){
     input.focus();
   }
 
+    // Çöp kutusu butonunu dinamik oluştur ve yazı alanına ekle
+  const inputRow = document.getElementById('chat-input-row');
+  if (inputRow) {
+    const clearBtn = document.createElement('button');
+    clearBtn.id = 'chat-clear';
+    clearBtn.setAttribute('aria-label', 'Sohbeti Temizle');
+    clearBtn.title = 'Sohbeti Temizle';
+    clearBtn.innerHTML = '🗑️';
+    
+    // Butonu yazı yazma çubuğunun en soluna ekle
+    inputRow.insertBefore(clearBtn, inputRow.firstChild);
+    
+    clearBtn.addEventListener('click', () => {
+      if(confirm("Tüm sohbet geçmişi silinsin mi?")) {
+        chatHistory = [chatHistory[0]]; 
+        localStorage.removeItem('ahure_chat_history');
+        log.innerHTML = '';
+      }
+    });
+  }
   sendBtn.addEventListener('click', send);
   input.addEventListener('keydown', e => {
     if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); send(); }

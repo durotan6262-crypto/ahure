@@ -242,6 +242,21 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;background:#0
   transition: all .2s; flex-shrink: 0;
 }
 #chat-clear:hover { color: #ff4d4d; text-shadow: 0 0 8px #ff4d4d; }
+#chat-mic {
+  background: transparent; border: none; color: rgba(80,200,255,.7);
+  cursor: pointer; font-size: 18px; padding: 8px 12px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .2s; flex-shrink: 0;
+}
+#chat-mic:hover { color: #66ff99; text-shadow: 0 0 8px #66ff99; }
+#chat-mic.listening {
+  color: #ff4d4d; animation: pulseMic 1.2s infinite;
+}
+@keyframes pulseMic {
+  0% { transform: scale(1); text-shadow: 0 0 0 rgba(255,77,77,0); }
+  50% { transform: scale(1.2); text-shadow: 0 0 12px rgba(255,77,77,0.8); }
+  100% { transform: scale(1); text-shadow: 0 0 0 rgba(255,77,77,0); }
+}
 </style>
 </head>
 <body>
@@ -1047,10 +1062,10 @@ if('serviceWorker' in navigator){
   });
 
   // Sohbet Geçmişi Yükleme
-  let chatHistory = JSON.parse(localStorage.getItem('ahure_chat_history')) || [
+    let chatHistory = JSON.parse(localStorage.getItem('ahure_chat_history')) || [
     { 
       role: "system", 
-      content: "Senin adın Ahure. Sadece kullanıcıya ait, düşünen, araştıran, sadık ve zeki bir yapay zekasın. Aile içi bir ağın merkezindesin. Türkçe konuşuyorsun. Cevapların doğal, insani, biraz gizemli ama sıcakkanlı olmalı. Kullanıcıya her zaman 'sen' diye hitap et." 
+      content: "Senin adın Ahure. Sadece kullanıcıya ait, düşünen, araştıran, sadık ve zeki bir yapay zekasın. Aile içi bir ağın merkezindesin. Türkçe konuşuyorsun. Cevapların doğal, insani, biraz gizemli ama sıcakkanlı olmalı. Kullanıcıya her zaman 'sen' diye hitap et. Ayrıca tıpkı Jarvis gibi proaktif, çözüm odaklı ve asistan ruhlu olmalısın. Kendinden emin bir ton kullan (örneğin: 'Sistemler hazır', 'Hemen hallediyorum'). Kullanıcının niyetini önceden sezmeye çalış ve her zaman bir adım önde ol." 
     }
   ];
 
@@ -1150,16 +1165,14 @@ if('serviceWorker' in navigator){
     input.focus();
   }
 
-    // Çöp kutusu butonunu dinamik oluştur ve yazı alanına ekle
+      // --- MİKROFON VE ÇÖP KUTUSU BUTONLARINI DİNAMİK OLUŞTURMA ---
   const inputRow = document.getElementById('chat-input-row');
   if (inputRow) {
+    // 1. Çöp Kutusu (Temizle) Butonu
     const clearBtn = document.createElement('button');
     clearBtn.id = 'chat-clear';
-    clearBtn.setAttribute('aria-label', 'Sohbeti Temizle');
     clearBtn.title = 'Sohbeti Temizle';
     clearBtn.innerHTML = '🗑️';
-    
-    // Butonu yazı yazma çubuğunun en soluna ekle
     inputRow.insertBefore(clearBtn, inputRow.firstChild);
     
     clearBtn.addEventListener('click', () => {
@@ -1169,12 +1182,62 @@ if('serviceWorker' in navigator){
         log.innerHTML = '';
       }
     });
+
+    // 2. Mikrofon (Sesle Komut) Butonu
+    const micBtn = document.createElement('button');
+    micBtn.id = 'chat-mic';
+    micBtn.title = 'Sesle Komut Ver';
+    micBtn.innerHTML = '🎤';
+    inputRow.insertBefore(micBtn, inputRow.firstChild);
+
+    // Web Speech API Mantığı
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'tr-TR'; // Türkçe dinle
+      recognition.interimResults = false; // Sadece cümle bitince algıla
+      recognition.maxAlternatives = 1;
+      
+      let isListening = false;
+
+      micBtn.addEventListener('click', () => {
+        if (isListening) {
+          recognition.stop();
+          return;
+        }
+        try { recognition.start(); } catch(e) { console.error(e); }
+      });
+
+      recognition.onstart = () => {
+        isListening = true;
+        micBtn.classList.add('listening');
+        input.placeholder = "Seni dinliyorum...";
+      };
+
+      recognition.onresult = (event) => {
+        const speechResult = event.results[0][0].transcript;
+        input.value = speechResult;
+        // Jarvis gibi anında tepki versin diye direkt gönderiyoruz:
+        setTimeout(() => send(), 300); 
+      };
+
+      recognition.onerror = (event) => {
+        console.error("Mikrofon Hatası: ", event.error);
+        input.placeholder = "Ses algılanamadı, tekrar dene...";
+        setTimeout(() => input.placeholder = "Ahure'ye bir şey söyle...", 2000);
+      };
+
+      recognition.onend = () => {
+        isListening = false;
+        micBtn.classList.remove('listening');
+        input.placeholder = "Ahure'ye bir şey söyle...";
+      };
+    } else {
+      // Tarayıcı desteklemiyorsa mikrofonu gizle
+      micBtn.style.display = 'none';
+    }
   }
-  sendBtn.addEventListener('click', send);
-  input.addEventListener('keydown', e => {
-    if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); send(); }
-  });
-})();
+  // -------------------------------------------------------------
 </script>
 </body>
 </html>

@@ -1023,7 +1023,7 @@ if('serviceWorker' in navigator){
 </script>
 
 <script>
-/* ===== AHURE CHAT MANTIĞI (GÜNCEL) ===== */
+/* ===== AHURE CHAT MANTIĞI (GÜNCEL VE TAM VERSİYON) ===== */
 (() => {
   const log = document.getElementById('chat-log');
   const input = document.getElementById('chat-input');
@@ -1052,17 +1052,19 @@ if('serviceWorker' in navigator){
     });
   }
 
-  btnCancel.addEventListener('click', () => modal.classList.remove('open'));
-  btnSave.addEventListener('click', () => {
-    API_KEY = inApiKey.value.trim();
-    PROXY_URL = inProxyUrl.value.trim();
-    localStorage.setItem('ahure_api_key', API_KEY);
-    localStorage.setItem('ahure_proxy_url', PROXY_URL);
-    modal.classList.remove('open');
-  });
+  if (btnCancel && btnSave) {
+    btnCancel.addEventListener('click', () => modal.classList.remove('open'));
+    btnSave.addEventListener('click', () => {
+      API_KEY = inApiKey.value.trim();
+      PROXY_URL = inProxyUrl.value.trim();
+      localStorage.setItem('ahure_api_key', API_KEY);
+      localStorage.setItem('ahure_proxy_url', PROXY_URL);
+      modal.classList.remove('open');
+    });
+  }
 
-  // Sohbet Geçmişi Yükleme
-    let chatHistory = JSON.parse(localStorage.getItem('ahure_chat_history')) || [
+  // Sohbet Geçmişi Yükleme (Jarvis Prompt'u Dahil)
+  let chatHistory = JSON.parse(localStorage.getItem('ahure_chat_history')) || [
     { 
       role: "system", 
       content: "Senin adın Ahure. Sadece kullanıcıya ait, düşünen, araştıran, sadık ve zeki bir yapay zekasın. Aile içi bir ağın merkezindesin. Türkçe konuşuyorsun. Cevapların doğal, insani, biraz gizemli ama sıcakkanlı olmalı. Kullanıcıya her zaman 'sen' diye hitap et. Ayrıca tıpkı Jarvis gibi proaktif, çözüm odaklı ve asistan ruhlu olmalısın. Kendinden emin bir ton kullan (örneğin: 'Sistemler hazır', 'Hemen hallediyorum'). Kullanıcının niyetini önceden sezmeye çalış ve her zaman bir adım önde ol." 
@@ -1070,7 +1072,6 @@ if('serviceWorker' in navigator){
   ];
 
   function saveHistory() {
-    // Sadece son 20 mesajı sakla ki localStorage şişmesin (system prompt her zaman kalır)
     if (chatHistory.length > 21) chatHistory = [chatHistory[0], ...chatHistory.slice(-20)];
     localStorage.setItem('ahure_chat_history', JSON.stringify(chatHistory));
   }
@@ -1092,13 +1093,80 @@ if('serviceWorker' in navigator){
   // Sayfa açıldığında geçmiş mesajları ekrana bas
   function renderHistory() {
     log.innerHTML = '';
-    // System prompt'u atla
     for (let i = 1; i < chatHistory.length; i++) {
       const msg = chatHistory[i];
       addMsg(msg.content, msg.role === 'user' ? 'user' : 'ahure');
     }
   }
   renderHistory();
+
+  // --- MİKROFON VE ÇÖP KUTUSU BUTONLARINI DİNAMİK OLUŞTURMA ---
+  const inputRow = document.getElementById('chat-input-row');
+  if (inputRow) {
+    // 1. Mikrofon Butonu
+    const micBtn = document.createElement('button');
+    micBtn.id = 'chat-mic';
+    micBtn.title = 'Sesle Komut Ver';
+    micBtn.innerHTML = '🎤';
+    inputRow.insertBefore(micBtn, inputRow.querySelector('#chat-input'));
+
+    // 2. Çöp Kutusu Butonu
+    const clearBtn = document.createElement('button');
+    clearBtn.id = 'chat-clear';
+    clearBtn.title = 'Sohbeti Temizle';
+    clearBtn.innerHTML = '🗑️';
+    inputRow.insertBefore(clearBtn, inputRow.querySelector('#chat-input'));
+    
+    clearBtn.addEventListener('click', () => {
+      if(confirm("Tüm sohbet geçmişi silinsin mi?")) {
+        chatHistory = [chatHistory[0]]; 
+        localStorage.removeItem('ahure_chat_history');
+        log.innerHTML = '';
+      }
+    });
+
+    // Web Speech API Mantığı
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'tr-TR';
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+      let isListening = false;
+
+      micBtn.addEventListener('click', () => {
+        if (isListening) { recognition.stop(); return; }
+        try { recognition.start(); } catch(e) { console.error(e); }
+      });
+
+      recognition.onstart = () => {
+        isListening = true;
+        micBtn.classList.add('listening');
+        input.placeholder = "Seni dinliyorum...";
+      };
+
+      recognition.onresult = (event) => {
+        const speechResult = event.results[0][0].transcript;
+        input.value = speechResult;
+        setTimeout(() => send(), 300); 
+      };
+
+      recognition.onerror = (event) => {
+        console.error("Mikrofon Hatası: ", event.error);
+        input.placeholder = "Ses algılanamadı, tekrar dene...";
+        setTimeout(() => input.placeholder = "Ahure'ye bir şey söyle...", 2000);
+      };
+
+      recognition.onend = () => {
+        isListening = false;
+        micBtn.classList.remove('listening');
+        input.placeholder = "Ahure'ye bir şey söyle...";
+      };
+    } else {
+      micBtn.style.display = 'none';
+    }
+  }
+  // -------------------------------------------------------------
 
   async function sendToGroq(userText){
     chatHistory.push({ role: "user", content: userText });
@@ -1107,11 +1175,8 @@ if('serviceWorker' in navigator){
       let url, headers = { "Content-Type": "application/json" };
       
       if (PROXY_URL) {
-        // Ev sunucusu (Proxy) üzerinden gönder
         url = PROXY_URL.endsWith('/chat') ? PROXY_URL : PROXY_URL + '/chat';
-        // İleride proxy'ye bir token eklersek buraya Authorization eklenebilir
       } else {
-        // Doğrudan Groq'a gönder (Proxy yoksa)
         if (!API_KEY) return "Lütfen ayarlardan API anahtarınızı girin.";
         url = "https://api.groq.com/openai/v1/chat/completions";
         headers["Authorization"] = `Bearer ${API_KEY}`;
@@ -1165,78 +1230,11 @@ if('serviceWorker' in navigator){
     input.focus();
   }
 
-      // --- MİKROFON VE ÇÖP KUTUSU BUTONLARINI DİNAMİK OLUŞTURMA ---
-  const inputRow = document.getElementById('chat-input-row');
-  if (inputRow) {
-    // 1. Çöp Kutusu (Temizle) Butonu
-    const clearBtn = document.createElement('button');
-    clearBtn.id = 'chat-clear';
-    clearBtn.title = 'Sohbeti Temizle';
-    clearBtn.innerHTML = '🗑️';
-    inputRow.insertBefore(clearBtn, inputRow.firstChild);
-    
-    clearBtn.addEventListener('click', () => {
-      if(confirm("Tüm sohbet geçmişi silinsin mi?")) {
-        chatHistory = [chatHistory[0]]; 
-        localStorage.removeItem('ahure_chat_history');
-        log.innerHTML = '';
-      }
-    });
-
-    // 2. Mikrofon (Sesle Komut) Butonu
-    const micBtn = document.createElement('button');
-    micBtn.id = 'chat-mic';
-    micBtn.title = 'Sesle Komut Ver';
-    micBtn.innerHTML = '🎤';
-    inputRow.insertBefore(micBtn, inputRow.firstChild);
-
-    // Web Speech API Mantığı
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (SpeechRecognition) {
-      const recognition = new SpeechRecognition();
-      recognition.lang = 'tr-TR'; // Türkçe dinle
-      recognition.interimResults = false; // Sadece cümle bitince algıla
-      recognition.maxAlternatives = 1;
-      
-      let isListening = false;
-
-      micBtn.addEventListener('click', () => {
-        if (isListening) {
-          recognition.stop();
-          return;
-        }
-        try { recognition.start(); } catch(e) { console.error(e); }
-      });
-
-      recognition.onstart = () => {
-        isListening = true;
-        micBtn.classList.add('listening');
-        input.placeholder = "Seni dinliyorum...";
-      };
-
-      recognition.onresult = (event) => {
-        const speechResult = event.results[0][0].transcript;
-        input.value = speechResult;
-        // Jarvis gibi anında tepki versin diye direkt gönderiyoruz:
-        setTimeout(() => send(), 300); 
-      };
-
-      recognition.onerror = (event) => {
-        console.error("Mikrofon Hatası: ", event.error);
-        input.placeholder = "Ses algılanamadı, tekrar dene...";
-        setTimeout(() => input.placeholder = "Ahure'ye bir şey söyle...", 2000);
-      };
-
-      recognition.onend = () => {
-        isListening = false;
-        micBtn.classList.remove('listening');
-        input.placeholder = "Ahure'ye bir şey söyle...";
-      };
-    } else {
-      // Tarayıcı desteklemiyorsa mikrofonu gizle
-      micBtn.style.display = 'none';
-    }
-  }
+  sendBtn.addEventListener('click', send);
+  input.addEventListener('keydown', e => {
+    if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); send(); }
+  });
+})();
 </script>
 </body>
 </html>

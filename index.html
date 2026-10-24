@@ -1202,6 +1202,17 @@ if('serviceWorker' in navigator){
 
       const data = await response.json();
       const reply = data.choices[0].message.content;
+            // --- SES ÇALMA MANTIĞI ---
+      if (data.audio_base64) {
+        try {
+          const audioSrc = 'data:audio/wav;base64,' + data.audio_base64;
+          const audio = new Audio(audioSrc);
+          audio.play().catch(e => console.log("Ses çalınamadı:", e));
+        } catch (e) {
+          console.error("Ses işleme hatası:", e);
+        }
+      }
+      // --------------------------
       chatHistory.push({ role: "assistant", content: reply });
       saveHistory();
       return reply;

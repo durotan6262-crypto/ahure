@@ -1052,13 +1052,29 @@ if('serviceWorker' in navigator){
     });
   }
 
-  if (btnCancel && btnSave) {
+    if (btnCancel && btnSave) {
     btnCancel.addEventListener('click', () => modal.classList.remove('open'));
-    btnSave.addEventListener('click', () => {
+    btnSave.addEventListener('click', async () => {
       API_KEY = inApiKey.value.trim();
       PROXY_URL = inProxyUrl.value.trim();
       localStorage.setItem('ahure_api_key', API_KEY);
       localStorage.setItem('ahure_proxy_url', PROXY_URL);
+      
+      // API Anahtarını Node.js sunucusuna gönder
+      if (API_KEY && PROXY_URL) {
+        try {
+          const baseUrl = PROXY_URL.replace('/chat', '');
+          await fetch(baseUrl + '/set-api-key', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ key: API_KEY })
+          });
+          console.log("API Anahtarı sunucuya iletildi.");
+        } catch (e) {
+          console.error("Sunucuya anahtar iletilemedi:", e);
+        }
+      }
+      
       modal.classList.remove('open');
     });
   }

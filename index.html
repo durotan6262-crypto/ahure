@@ -1023,8 +1023,8 @@ if('serviceWorker' in navigator){
 </script>
 
 <script>
-<script>
-/* ===== AHURE CHAT MANTIĞI (ASENKRON TTS) ===== */
+
+/* ===== AHURE CHAT MANTIĞI (DÜZELTİLMİŞ VE TAM VERSİYON) ===== */
 (() => {
   const log = document.getElementById('chat-log');
   const input = document.getElementById('chat-input');
@@ -1037,9 +1037,12 @@ if('serviceWorker' in navigator){
   const btnCancel = document.getElementById('btn-cancel-set');
 
   let waiting = false;
+
+  // Hafızadan API ve Proxy ayarlarını yükle
   let API_KEY = localStorage.getItem('ahure_api_key') || '';
   let PROXY_URL = localStorage.getItem('ahure_proxy_url') || '';
 
+  // Ayarlar Butonu Tıklanınca
   if (apiBtn) {
     apiBtn.addEventListener('click', () => {
       inApiKey.value = API_KEY;
@@ -1055,6 +1058,8 @@ if('serviceWorker' in navigator){
       PROXY_URL = inProxyUrl.value.trim();
       localStorage.setItem('ahure_api_key', API_KEY);
       localStorage.setItem('ahure_proxy_url', PROXY_URL);
+      
+      // API Anahtarını Node.js sunucusuna gönder
       if (API_KEY && PROXY_URL) {
         try {
           const baseUrl = PROXY_URL.replace('/chat', '');
@@ -1063,16 +1068,20 @@ if('serviceWorker' in navigator){
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ key: API_KEY })
           });
-        } catch (e) { console.error("Anahtar iletilemedi:", e); }
+          console.log("API Anahtarı sunucuya iletildi.");
+        } catch (e) {
+          console.error("Sunucuya anahtar iletilemedi:", e);
+        }
       }
       modal.classList.remove('open');
     });
   }
 
+  // Sohbet Geçmişi Yükleme
   let chatHistory = JSON.parse(localStorage.getItem('ahure_chat_history')) || [
-    {
-      role: "system",
-      content: "Senin adın Ahure. Sadece kullanıcıya ait, düşünen, araştıran, sadık ve zeki bir yapay zekasın. Aile içi bir ağın merkezindesin. Türkçe konuşuyorsun. Kullanıcıya her zaman 'sen' diye hitap et. Tıpkı Jarvis gibi proaktif, çözüm odaklı ve asistan ruhlu olmalısın. Kendinden emin bir ton kullan. KESİNLİKLE EMOJİ KULLANMA. Cevaplarını her zaman kısa, öz ve net tut. Gereksiz uzun cümlelerden ve açıklamalardan kaçın. Eğer kullanıcı sadece senin adını çağırırsa (örneğin 'Ahure') veya kısa bir selam verirse, çok kısa ve net yanıt ver (örneğin: 'Efendim', 'Buradayım', 'Dinliyorum', 'Sistemler hazır')."
+    { 
+      role: "system", 
+      content: "Senin adın Ahure. Sadece kullanıcıya ait, düşünen, araştıran, sadık ve zeki bir yapay zekasın. Aile içi bir ağın merkezindesin. Türkçe konuşuyorsun. Kullanıcıya her zaman 'sen' diye hitap et. Tıpkı Jarvis gibi proaktif, çözüm odaklı ve asistan ruhlu olmalısın. Kendinden emin bir ton kullan. KESİNLİKLE EMOJİ KULLANMA. Cevaplarını her zaman kısa, öz ve net tut. Gereksiz uzun cümlelerden ve açıklamalardan kaçın. Eğer kullanıcı sadece senin adını çağırırsa (örneğin 'Ahure') veya kısa bir selam verirse, çok kısa ve net yanıt ver (örneğin: 'Efendim', 'Buradayım', 'Dinliyorum', 'Sistemler hazır')."  
     }
   ];
 
@@ -1083,7 +1092,7 @@ if('serviceWorker' in navigator){
 
   function addMsg(text, who){
     const el = document.createElement('div');
-    el.className = 'msg ' + who;
+    el.className = 'msg ' + who; 
     if(who === 'ahure typing'){
       el.className = 'msg ahure typing';
       el.innerHTML = '<span class="dots"><span>.</span><span>.</span><span>.</span></span>';
@@ -1104,7 +1113,7 @@ if('serviceWorker' in navigator){
   }
   renderHistory();
 
-  // Mikrofon + Çöp kutusu
+  // --- MİKROFON VE ÇÖP KUTUSU BUTONLARINI DİNAMİK OLUŞTURMA (DÜZELTİLDİ) ---
   const inputRow = document.getElementById('chat-input-row');
   if (inputRow) {
     const micBtn = document.createElement('button');
@@ -1118,15 +1127,16 @@ if('serviceWorker' in navigator){
     clearBtn.title = 'Sohbeti Temizle';
     clearBtn.innerHTML = '🗑️';
     inputRow.insertBefore(clearBtn, inputRow.querySelector('#chat-input'));
-
+    
     clearBtn.addEventListener('click', () => {
       if(confirm("Tüm sohbet geçmişi silinsin mi?")) {
-        chatHistory = [chatHistory[0]];
+        chatHistory = [chatHistory[0]]; 
         localStorage.removeItem('ahure_chat_history');
         log.innerHTML = '';
       }
     });
 
+    // Web Speech API Mantığı
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
       const recognition = new SpeechRecognition();
@@ -1134,24 +1144,30 @@ if('serviceWorker' in navigator){
       recognition.interimResults = false;
       recognition.maxAlternatives = 1;
       let isListening = false;
+
       micBtn.addEventListener('click', () => {
         if (isListening) { recognition.stop(); return; }
         try { recognition.start(); } catch(e) { console.error(e); }
       });
+
       recognition.onstart = () => {
         isListening = true;
         micBtn.classList.add('listening');
         input.placeholder = "Seni dinliyorum...";
       };
+
       recognition.onresult = (event) => {
-        input.value = event.results[0][0].transcript;
-        setTimeout(() => send(), 300);
+        const speechResult = event.results[0][0].transcript;
+        input.value = speechResult;
+        setTimeout(() => send(), 300); 
       };
+
       recognition.onerror = (event) => {
-        console.error("Mikrofon Hatası:", event.error);
+        console.error("Mikrofon Hatası: ", event.error);
         input.placeholder = "Ses algılanamadı, tekrar dene...";
         setTimeout(() => input.placeholder = "Ahure'ye bir şey söyle...", 2000);
       };
+
       recognition.onend = () => {
         isListening = false;
         micBtn.classList.remove('listening');
@@ -1161,44 +1177,14 @@ if('serviceWorker' in navigator){
       micBtn.style.display = 'none';
     }
   }
-
-  // Ses çalma (asenkron TTS yoklama)
-  async function playTTSFor(text){
-    if (!PROXY_URL) return;
-    const baseUrl = PROXY_URL.replace('/chat', '').replace(/\/+$/, '');
-    const ttsEndpoint = baseUrl + '/tts';
-
-    // 30 sn boyunca her 1.5 sn'de bir dene
-    const MAX_TRIES = 20;
-    for (let i = 0; i < MAX_TRIES; i++) {
-      try {
-        const r = await fetch(ttsEndpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          targetAddressSpace: 'local',
-          body: JSON.stringify({ text })
-        });
-        if (r.ok) {
-          const data = await r.json();
-          if (data.audio_base64) {
-            const audio = new Audio('data:audio/wav;base64,' + data.audio_base64);
-            audio.play().catch(e => console.log("Ses çalınamadı:", e));
-            return;
-          }
-        }
-      } catch (e) {
-        // sessizce devam
-      }
-      await new Promise(r => setTimeout(r, 1500));
-    }
-    console.log("Ses zaman aşımına uğradı:", text.slice(0, 40));
-  }
+  // -------------------------------------------------------------
 
   async function sendToGroq(userText){
     chatHistory.push({ role: "user", content: userText });
 
     try {
       let url, headers = { "Content-Type": "application/json" };
+      
       if (PROXY_URL) {
         url = PROXY_URL.endsWith('/chat') ? PROXY_URL : PROXY_URL + '/chat';
       } else {
@@ -1210,7 +1196,7 @@ if('serviceWorker' in navigator){
       const response = await fetch(url, {
         method: "POST",
         headers: headers,
-        targetAddressSpace: "local",
+        targetAddressSpace: "local", 
         body: JSON.stringify({
           model: "openai/gpt-oss-120b",
           messages: chatHistory,
@@ -1227,10 +1213,17 @@ if('serviceWorker' in navigator){
       const data = await response.json();
       const reply = data.choices[0].message.content;
 
-      // Ses arka planda hazırlanıp çalınacak (metni bloke etme)
-      if (PROXY_URL) {
-        playTTSFor(reply); // await YOK — kasten
+      // --- SES ÇALMA MANTIĞI ---
+      if (data.audio_base64) {
+        try {
+          const audioSrc = 'data:audio/wav;base64,' + data.audio_base64;
+          const audio = new Audio(audioSrc);
+          audio.play().catch(e => console.log("Ses çalınamadı:", e));
+        } catch (e) {
+          console.error("Ses işleme hatası:", e);
+        }
       }
+      // --------------------------
 
       chatHistory.push({ role: "assistant", content: reply });
       saveHistory();
@@ -1247,12 +1240,16 @@ if('serviceWorker' in navigator){
     if(!text || waiting) return;
     input.value = '';
     addMsg(text, 'user');
+
     waiting = true;
     sendBtn.disabled = true;
     const typing = addMsg('', 'ahure typing');
+
     const reply = await sendToGroq(text);
+
     typing.remove();
     addMsg(reply, 'ahure');
+
     waiting = false;
     sendBtn.disabled = false;
     input.focus();

@@ -455,14 +455,14 @@ if('serviceWorker' in navigator){
     const ns = AC.createBufferSource(); ns.buffer = nb; ns.loop = true;
     const lp = AC.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 220;
     const bs = AC.createBiquadFilter(); bs.type = "lowshelf"; bs.frequency.value = 80; bs.gain.value = 12;
-    const sg = AC.createGain(); sg.gain.value = 0.30;
+    const sg = AC.createGain(); sg.gain.value = 0.10; // 0.30'dan 0.10'a düşürdük (Genel uğultu)
     const sub = AC.createOscillator(); sub.type = "sine"; sub.frequency.value = 40;
-    const subG = AC.createGain(); subG.gain.value = 0.08;
+    const subG = AC.createGain(); subG.gain.value = 0.03; // 0.08'den 0.03'e düşürdük (Derin bas)
     ns.connect(lp).connect(bs).connect(sg).connect(mg);
     sub.connect(subG).connect(mg);
     ns.start(now); sub.start(now);
     mg.gain.setValueAtTime(0.001, now);
-    mg.gain.linearRampToValueAtTime(0.30, now + 1.5);
+    mg.gain.linearRampToValueAtTime(0.10, now + 1.5); // 0.30'dan 0.10'a düşürdük
     if(atmoInterval) clearInterval(atmoInterval);
     atmoInterval = setInterval(atmoPulse, 14000);
   }

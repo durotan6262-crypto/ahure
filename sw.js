@@ -1,4 +1,4 @@
-const CACHE = 'varlik-v136';
+const CACHE = 'ahure-v200';
 const ASSETS = ['./', './index.html', './manifest.json', './Idle.png', './world.png', './danger.png'];
 
 self.addEventListener('install', e => {
@@ -18,12 +18,25 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   const req = e.request;
+  const url = new URL(req.url);
 
-  // HTML ve SW dosyaları: ÖNCE İNTERNETTEN çek (network-first)
+  // 1) API istekleri: service worker'a HİÇ dokundurma
+  //    (chat, tts, set-api-key, health — proxy üzerinden gelen her şey)
+  if (
+    url.pathname.endsWith('/chat') ||
+    url.pathname.endsWith('/tts') ||
+    url.pathname.endsWith('/set-api-key') ||
+    url.pathname.endsWith('/health') ||
+    url.hostname.includes('groq.com')
+  ) {
+    return; // SW devre dışı → tarayıcı normal fetch yapar
+  }
+
+  // 2) HTML ve SW: network-first
   const isDoc = req.mode === 'navigate' ||
                 req.destination === 'document' ||
-                req.url.endsWith('.html') ||
-                req.url.endsWith('sw.js');
+                url.pathname.endsWith('.html') ||
+                url.pathname.endsWith('sw.js');
 
   if (isDoc) {
     e.respondWith(
@@ -36,7 +49,7 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  // Resimler vs: ÖNCE ÖNBELLEKTEN, yoksa internetten (cache-first)
+  // 3) Diğerleri (resim, manifest): cache-first
   e.respondWith(
     caches.match(req).then(cached =>
       cached || fetch(req).then(res => {

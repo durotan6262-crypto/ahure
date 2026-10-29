@@ -1213,15 +1213,28 @@ if('serviceWorker' in navigator){
       const data = await response.json();
       const reply = data.choices[0].message.content;
 
-      // --- SES ÇALMA MANTIĞI ---
-      if (data.audio_base64) {
-        try {
-          const audioSrc = 'data:audio/wav;base64,' + data.audio_base64;
-          const audio = new Audio(audioSrc);
-          audio.play().catch(e => console.log("Ses çalınamadı:", e));
-        } catch (e) {
-          console.error("Ses işleme hatası:", e);
-        }
+            // --- SES YOKLAMA MANTIĞI (fetch failed'i engeller) ---
+      if (PROXY_URL) {
+        const textToFetch = reply;
+        (async () => {
+          for (let i=0; i<20; i++) {
+            try {
+              const baseUrl = PROXY_URL.replace('/chat', '').replace(/\/+$/, '');
+              const r = await fetch(baseUrl + '/tts', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: textToFetch })
+              });
+              if (r.ok) {
+                const d = await r.json();
+                if (d.audio_base64) {
+                  new Audio('data:audio/wav;base64,' + d.audio_base64).play().catch(e=>console.log(e));
+                  break; // Ses bulundu, döngüyü kır
+                }
+              }
+            } catch(e) {}
+            await new Promise(r => setTimeout(r, 1500)); // Her 1.5 sn'de bir sor
+          }
+        })();
       }
       // --------------------------
 

@@ -1213,31 +1213,30 @@ if('serviceWorker' in navigator){
       const data = await response.json();
       const reply = data.choices[0].message.content;
 
-            // --- SES YOKLAMA MANTIĞI (fetch failed'i engeller) ---
+                  // --- YENİ SES MANTIĞI (Tailscale üzerinden) ---
       if (PROXY_URL) {
         const textToFetch = reply;
         (async () => {
-          for (let i=0; i<20; i++) {
-            try {
-              const baseUrl = PROXY_URL.replace('/chat', '').replace(/\/+$/, '');
-              const r = await fetch(baseUrl + '/tts', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text: textToFetch })
-              });
-              if (r.ok) {
-                const d = await r.json();
-                if (d.audio_base64) {
-                  new Audio('data:audio/wav;base64,' + d.audio_base64).play().catch(e=>console.log(e));
-                  break; // Ses bulundu, döngüyü kır
-                }
-              }
-            } catch(e) {}
-            await new Promise(r => setTimeout(r, 1500)); // Her 1.5 sn'de bir sor
-          }
+          try {
+            // Python sunucusuna ses üretmesi için istek at (Python 5000 portunda çalışıyor)
+            // Node.js burada bir aracı, ama biz doğrudan Python'a değil, Node üzerinden istek atacağız.
+            // Şimdilik Node.js'in /tts endpoint'i yok, o yüzden Python'a doğrudan istek atmak yerine
+            // Node.js'e bir endpoint ekleyeceğiz (bir sonraki adımda).
+            // Şimdilik metni gönderdik, ses için polling yapalım.
+            
+            const baseUrl = PROXY_URL.replace('/chat', '').replace(/\/+$/, '');
+            // Node.js'te /tts endpoint'i olmadığı için, Node.js'e /tts isteği atacağız.
+            // Ama biz Node.js'te /tts endpoint'i eklemedik. Bir sonraki adımda ekleyeceğiz.
+            // Şimdilik sadece metni göster, sesi sonra ekleyeceğiz.
+            
+            // Geçici olarak sadece metni gösteriyoruz, ses yok.
+            console.log("Ses için hazırlık yapılıyor...");
+            
+          } catch(e) { console.error("Ses hatasi:", e); }
         })();
       }
-      // --------------------------
-
+      // ---------------------------------------------
+      
       chatHistory.push({ role: "assistant", content: reply });
       saveHistory();
       return reply;

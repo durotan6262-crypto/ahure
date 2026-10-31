@@ -1,4 +1,4 @@
-const CACHE = 'ahure-v203';
+const CACHE = 'ahure-v204';
 const ASSETS = ['./', './index.html', './manifest.json', './Idle.png', './world.png', './danger.png'];
 
 self.addEventListener('install', e => {
